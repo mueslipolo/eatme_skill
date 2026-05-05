@@ -219,7 +219,7 @@ Before producing the JSON, walk these checks. Fix anything that fails:
 - [ ] **Instructions → ingredient:** every named ingredient inside a step exists in `recipeIngredient` with a quantity. (Scan steps for "ajouter X", "verser Y" — confirm X and Y are in the list.)
 - [ ] **Time math:** `totalTime` = `prepTime` + `cookTime` (ISO-8601 arithmetic, not approximation). Rest/marinate/rise time folds into `cookTime`.
 - [ ] **Yield:** `recipeYield` matches the spine source's yield (or 4–6 default).
-- [ ] **Sources block:** trailing HowToStep with `name: "Sources"` includes synthesis date and skill version string.
+- [ ] **Notes block:** top-level `notes` array (NOT trailing HowToSteps) contains both "Note du chef" and "Sources" entries; Sources includes synthesis date and skill version string.
 - [ ] **Dietary tags:** scan ingredients; append every applicable tag (`Vegan`, `Végétarien`, `Sans gluten`, `Sans lactose`, `Sans œufs`, `Sans fruits à coque`) to `keywords`. Skip rather than guess.
 - [ ] **JSON validity:** valid JSON syntax, starts with `{`.
 
@@ -386,6 +386,7 @@ Output is **schema.org/Recipe JSON-LD**. This is the format Mealie's
 | `keywords` | string | Comma-separated French tags. |
 | `url` | string | URL of the spine source. |
 | `tool` | array of strings | Tools used; `[]` if none. |
+| `notes` | array of `{"title": string, "text": string}` | **Non-standard schema.org extension that Mealie reads directly.** Used for chef's note and sources. Renders as a separate "Notes" block in the Mealie UI, distinct from cooking steps. See "Where chef's note and sources go". |
 
 #### `HowToStep` schema (entries in `recipeInstructions`)
 
@@ -397,18 +398,24 @@ Output is **schema.org/Recipe JSON-LD**. This is the format Mealie's
 
 #### Where chef's note and sources go
 
-Schema.org/Recipe has no `notes` field. Append two trailing HowToSteps:
+**Use a top-level `notes` array** — NOT trailing HowToSteps in `recipeInstructions`. Mealie reads `notes` directly from the JSON-LD via `scraped_data.schema.data.get("notes")` and renders them as a separate "Notes" block under the cooking steps. (Verified against `mealie-next` source: `mealie/services/scraper/scraper_strategies.py::get_notes()`.)
+
+If you put Note du chef / Sources as trailing `HowToStep` items, they appear as cooking steps in Mealie's UI — which is wrong UX.
 
 ```json
-{"@type": "HowToStep", "name": "Note du chef", "text": "Lorem ipsum…"},
-{"@type": "HowToStep", "name": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v5 le YYYY-MM-DD."}
+"notes": [
+  {"title": "Note du chef", "text": "Lorem ipsum…"},
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v12 le YYYY-MM-DD."}
+]
 ```
 
-The Sources HowToStep is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v11`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v12`).
+
+**This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
 #### Forbidden — DO NOT include
 
-- Mealie internal field names (snake_case): `recipe_ingredient`, `recipe_instructions`, `recipe_yield`, `prep_time`, `cook_time`, `total_time`, `recipe_category`, `recipe_yield_quantity`, `recipe_servings`, `notes`, `extras`, `tools` (lowercase plural), `org_url`
+- Mealie internal field names (snake_case): `recipe_ingredient`, `recipe_instructions`, `recipe_yield`, `prep_time`, `cook_time`, `total_time`, `recipe_category`, `recipe_yield_quantity`, `recipe_servings`, `extras`, `tools` (lowercase plural), `org_url` — these are Mealie's Pydantic field names, not schema.org. Note: `notes` is *not* forbidden — it's a non-standard JSON-LD extension Mealie does read.
 - Anything fabricated: `nutrition`, `aggregateRating`, `review`, `image`
 - Auto-managed: `dateCreated`, `dateModified`, `@id`
 
@@ -459,9 +466,11 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
     {"@type": "HowToStep", "text": "Saisir le poulet dans une cocotte avec 2 c. à soupe d'huile, 4 min par face. Réserver."},
     {"@type": "HowToStep", "text": "Faire suer l'oignon dans la même cocotte, 5 min jusqu'à transparence."},
     {"@type": "HowToStep", "text": "Ajouter la pâte de noix et 600 ml d'eau. Cuire à feu doux, 30 min, en remuant souvent."},
-    {"@type": "HowToStep", "text": "Remettre le poulet, ajouter la mélasse de grenade et le safran infusé. Mijoter à couvert, 1 h 30, jusqu'à ce que la sauce soit brun foncé et que le poulet se détache."},
-    {"@type": "HowToStep", "name": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Ottolenghi *Jerusalem*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
-    {"@type": "HowToStep", "name": "Sources", "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur ; Kenji López-Alt, *Serious Eats* (via republication r/recipes). Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v11 le 2026-05-05."}
+    {"@type": "HowToStep", "text": "Remettre le poulet, ajouter la mélasse de grenade et le safran infusé. Mijoter à couvert, 1 h 30, jusqu'à ce que la sauce soit brun foncé et que le poulet se détache."}
+  ],
+  "notes": [
+    {"title": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Najmieh Batmanglij, *Food of Life*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
+    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (spine) ; Persian-Mama ; Saveur ; Sabrina Ghayour, *Persiana*. Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v12 le 2026-05-05."}
   ]
 }
 ```
