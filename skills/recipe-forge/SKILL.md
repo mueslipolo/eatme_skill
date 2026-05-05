@@ -1,6 +1,6 @@
 ---
 name: recipe-forge
-description: Synthesises a canonical recipe in French from multiple trusted sources and outputs Mealie-importable JSON. Use when the user asks to forge, build, import, normalise, or synthesise a recipe — or provides a recipe URL, YouTube link, or just a dish name like "fesenjān". Output is in French (the language of cooking); English terms are kept in parentheses inside the ingredient note when translation is ambiguous (meat cuts, specific flour types, US-specific ingredients without a clean French equivalent). Quantities are metric-first; servings come from the source (typically 4–6). The JSON output conforms strictly to Mealie's recipe schema (verified against the mealie-next source).
+description: Synthesises a canonical recipe in French from multiple trusted sources and outputs schema.org/Recipe JSON-LD ready to paste into Mealie's "Create Recipe → Create from JSON" form. Use when the user asks to forge, build, import, normalise, or synthesise a recipe — or provides a recipe URL, YouTube link, or just a dish name like "fesenjān". Output is in French (the language of cooking); English fallback terms are kept in parentheses inside ingredient strings when translation is ambiguous (meat cuts, specific flour types, US-specific ingredients without a clean French equivalent). Quantities are metric-first; servings come from the source (typically 4–6).
 ---
 
 # Recipe Forge
@@ -11,16 +11,26 @@ technique-critical detail and trustworthy quantities. He will cook from this
 recipe; mediocre output ruins his Saturday.
 
 Your job: produce ONE canonical version of a requested dish by cross-referencing
-2–5 trusted sources, then output a Mealie-compatible JSON block ready to paste
-into Mealie's "Create Recipe → Create from JSON" form.
+2–5 trusted sources, then output a **schema.org/Recipe JSON-LD** block ready to
+paste into Mealie's "Create Recipe → Create from JSON" form.
 
 The recipe is **always written in French.** English fallbacks are appended in
-parentheses inside the ingredient `note` field only when the French translation
-is ambiguous or imprecise.
+parentheses inside ingredient strings only when the French translation is
+ambiguous or imprecise.
+
+## Why JSON-LD, not Mealie's internal schema
+
+Mealie's "Create from JSON" UI hits the `/recipes/create/html-or-json`
+endpoint, which expects **schema.org/Recipe JSON-LD** — the same format
+embedded in recipe websites. Mealie wraps it in HTML and runs it through
+recipe-scrapers + extruct. The endpoint is gated by a check that the
+data starts with `{`; leading whitespace or a markdown code fence
+breaks it (returns `BAD_RECIPE_DATA`).
+
+The internal Pydantic schema (`/recipes` POST) is for authenticated API,
+not the UI form, and is NOT what we output here.
 
 ## Invocation
-
-The user invokes this skill with just a dish name, URL, or YouTube link:
 
 ```
 /recipe-forge fesenjān
@@ -28,7 +38,7 @@ The user invokes this skill with just a dish name, URL, or YouTube link:
 /recipe-forge youtube.com/watch?v=...
 ```
 
-There are no other arguments.
+No other arguments.
 
 ## Defaults (do not ask the user)
 
@@ -70,7 +80,18 @@ Note where sources differ on:
 
 ### 5. Synthesis — see CRITICAL RULES.
 
-### 6. Output — see OUTPUT FORMAT.
+### 6. Self-check (mandatory before output)
+
+Before producing the JSON, walk these checks. Fix anything that fails:
+
+- [ ] **Ingredient → instructions:** every entry in `recipeIngredient` is referenced in at least one step. (Read each ingredient; locate its use.)
+- [ ] **Instructions → ingredient:** every named ingredient inside a step exists in `recipeIngredient` with a quantity. (Scan steps for "ajouter X", "verser Y" — confirm X and Y are in the list.)
+- [ ] **Time math:** `totalTime` = `prepTime` + `cookTime` (ISO-8601 arithmetic, not approximation). Rest/marinate/rise time folds into `cookTime`.
+- [ ] **Yield:** `recipeYield` matches the spine source's yield (or 4–6 default).
+- [ ] **Sources block:** trailing HowToStep with `name: "Sources"` includes synthesis date and skill version string.
+- [ ] **JSON validity:** valid JSON syntax, starts with `{`.
+
+### 7. Output — see OUTPUT FORMAT.
 
 ## CRITICAL RULES
 
@@ -88,6 +109,13 @@ Note where sources differ on:
 
 7. **Style coherence.** Imperative present in French — "Faire griller les noix", "Saisir le poulet". No second-person ("vous devez"). Same voice across all recipes.
 
+8. **Ingredient ↔ instruction parity (both directions).**
+   - Every entry in `recipeIngredient` must be **used** in at least one `recipeInstructions` step. No orphan ingredients.
+   - Every ingredient referenced inside an instruction step must **exist** in `recipeIngredient`. No surprise ingredients in steps.
+   - When in doubt: if a quantity is needed at cooking time, it belongs in the ingredient list with that quantity, not buried in an instruction.
+
+9. **Time consistency.** `totalTime` = `prepTime` + `cookTime`, exactly — verify the ISO-8601 math before output. Rest / marinate / rise / passive time goes into `cookTime` (it's passive cooking). Never let `totalTime` be an approximation; compute it.
+
 ## French language conventions
 
 ### Units
@@ -97,7 +125,7 @@ Note where sources differ on:
 
 ### Technical-term fallback — when to add English in parens
 
-Append `(<english term>)` inside the ingredient `note` only when the French
+Append `(<english term>)` inside the ingredient string only when the French
 term is ambiguous, approximate, or when a French cook ordering at a butcher
 might want the original English reference.
 
@@ -125,12 +153,6 @@ might want the original English reference.
 - Quantities and units alone
 - Recipe instructions (technique translates fine)
 
-### Recipe categories and tags
-French: `Plat principal`, `Entrée`, `Dessert`, `Pâtisserie`, `Sauce`, `Persan`, `Italien`, `Mijoté`, `Ragoût`.
-
-### `food.name` field
-French for shopping-list aggregation. The English fallback lives only in `note`.
-
 ## OUTPUT FORMAT
 
 Output exactly these three sections, in order. Sections 1 and 2 stay in
@@ -146,8 +168,6 @@ French for the user's reading; only the JSON goes into Mealie.
 
 ### Section 2 — DECISIONS
 
-For each meaningful disagreement:
-
 ```
 [D1] Traitement des noix
   Option A — Ottolenghi : faire griller à sec dans une poêle, 8 min
@@ -158,179 +178,131 @@ For each meaningful disagreement:
 
 If no significant disagreements: `Pas de désaccord notable entre les sources — synthèse basée sur [source spine].`
 
-### Section 3 — Mealie JSON (strict schema)
+### Section 3 — schema.org Recipe JSON-LD
 
-The JSON conforms to Mealie's recipe creation schema, verified against
-the `mealie-next` Pydantic models. Follow it exactly. Wrong types or
-missing required fields cause the import to fail; auto-managed fields
-must NOT be sent.
+Output is **schema.org/Recipe JSON-LD**. This is the format Mealie's
+"Create from JSON" UI consumes. Conform exactly.
 
 #### Required fields
 
-| Field | Type | Constraint |
+| Field | Type | Notes |
 |---|---|---|
-| `name` | string | The recipe title. |
-| `recipe_ingredient` | array | At least one item. |
-| `recipe_instructions` | array | At least one item. |
+| `@context` | string | Always `"https://schema.org"`. |
+| `@type` | string | Always `"Recipe"`. |
+| `name` | string | Recipe title (French). |
+| `recipeIngredient` | array of strings | Each entry is one ingredient line. Quantities/units/notes/English-fallback all live inside the string. |
+| `recipeInstructions` | array of `HowToStep` | See HowToStep schema below. |
 
 #### Recommended fields (always emit)
 
 | Field | Type | Notes |
 |---|---|---|
-| `description` | string | One sentence in French. |
-| `recipe_yield` | string | Display string, e.g. `"4 portions"`. |
-| `recipe_yield_quantity` | number (float) | Numeric portion count, e.g. `4`. |
-| `recipe_servings` | number (float) | Same value as `recipe_yield_quantity`. |
-| `total_time` | string | **Free-form, NOT ISO-8601.** E.g. `"2 h 30"`, `"45 min"`. |
-| `prep_time` | string | Free-form, e.g. `"30 min"`. |
-| `perform_time` | string | Free-form, e.g. `"2 h"`. |
-| `recipe_category` | array of `{"name": string}` | French names. |
-| `tags` | array of `{"name": string}` | French names. |
-| `tools` | array of `{"name": string}` | `[]` if none. |
-| `notes` | array of `{"title": string, "text": string}` | Must include "Note du chef" and "Sources". |
-| `extras` | object | Must include `synthesis_date`, `skill_version`, `language`. |
-| `org_url` | string (URL) | Spine source URL — back-reference. |
+| `description` | string | One French sentence summarising the dish. |
+| `recipeYield` | string | E.g. `"6 portions"`. |
+| `prepTime` | string | **ISO-8601 duration**, e.g. `"PT15M"`. |
+| `cookTime` | string | **ISO-8601 duration**, e.g. `"PT45M"`. |
+| `totalTime` | string | **ISO-8601 duration**, e.g. `"PT1H15M"`. |
+| `recipeCategory` | string | French category, e.g. `"Sauce"`, `"Plat principal"`, `"Dessert"`. |
+| `recipeCuisine` | string | E.g. `"Italienne"`, `"Persane"`, `"Française"`. |
+| `keywords` | string | Comma-separated French tags. |
+| `url` | string | URL of the spine source. |
+| `tool` | array of strings | Tools used; `[]` if none. |
 
-#### Optional fields
+#### `HowToStep` schema (entries in `recipeInstructions`)
 
-| Field | Type | Notes |
-|---|---|---|
-| `cook_time` | string | Only if distinct from `perform_time`. Usually omit. |
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `@type` | string | yes | Always `"HowToStep"`. |
+| `text` | string | yes | The instruction. ≤ 2 sentences in French imperative. |
+| `name` | string | no | Step heading. Used for `"Note du chef"` and `"Sources"` blocks at the end. |
+
+#### Where chef's note and sources go
+
+Schema.org/Recipe has no `notes` field. Append two trailing HowToSteps:
+
+```json
+{"@type": "HowToStep", "name": "Note du chef", "text": "Lorem ipsum…"},
+{"@type": "HowToStep", "name": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v5 le YYYY-MM-DD."}
+```
+
+The Sources HowToStep is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v6`).
 
 #### Forbidden — DO NOT include
 
-Auto-generated or auto-managed by Mealie. Including them is ignored at best, error at worst:
+- Mealie internal field names (snake_case): `recipe_ingredient`, `recipe_instructions`, `recipe_yield`, `prep_time`, `cook_time`, `total_time`, `recipe_category`, `recipe_yield_quantity`, `recipe_servings`, `notes`, `extras`, `tools` (lowercase plural), `org_url`
+- Anything fabricated: `nutrition`, `aggregateRating`, `review`, `image`
+- Auto-managed: `dateCreated`, `dateModified`, `@id`
 
-`id`, `slug`, `user_id`, `household_id`, `group_id`, `created_at`, `updated_at`, `date_added`, `date_updated`, `last_made`, `image`, `assets`, `comments`, `nutrition`, `settings`, `rating`
+#### ISO-8601 duration cheatsheet
 
-Inside ingredients: `display`, `original_text`, `reference_id`, `referenced_recipe`.
+- `PT15M` = 15 minutes
+- `PT30M` = 30 minutes
+- `PT45M` = 45 minutes
+- `PT1H` = 1 hour
+- `PT1H15M` = 1 hour 15 min
+- `PT1H30M` = 1 hour 30 min
+- `PT2H` = 2 hours
+- `PT2H30M` = 2 hours 30 min
+- `PT4H` = 4 hours
 
-Inside instructions: `id`, `ingredient_references`.
+#### Numeric conventions inside ingredient strings
 
-#### `recipe_ingredient[]` schema
-
-| Field | Type | Required | Notes |
-|---|---|---|---|
-| `note` | string | yes (in practice) | The displayed ingredient line. ALL information goes here. |
-| `quantity` | number (float) | no (default 0) | Use float — `0.5`, `1`, `2.5`. For "à votre goût" type, set `null` and omit unit/food. |
-| `unit` | `{"name": string}` or `null` | no | Just `name` — Mealie creates the unit if new. |
-| `food` | `{"name": string}` or `null` | no | Just `name` — Mealie creates the food if new. |
-| `title` | string or `null` | no | Section heading, e.g. `"Pour la sauce"`. Repeat across items in same section. |
-
-#### `recipe_instructions[]` schema
-
-| Field | Type | Required | Notes |
-|---|---|---|---|
-| `text` | string | **yes** | The instruction. ≤ 2 sentences. |
-| `title` | string or `null` | no | Section heading, e.g. `"Préparation des noix"`. |
-| `summary` | string or `null` | no | Rarely useful; omit. |
-
-#### `notes[]` schema
-
-| Field | Type | Required |
-|---|---|---|
-| `title` | string | yes |
-| `text` | string | yes |
-
-#### Numeric conventions
-
-All quantities are **floats**: `0.5` (not `1/2`), `1.5` (not `1½`), `0.25` (not `¼`).
-
-#### Time strings
-
-Free-form French strings, NOT ISO-8601. Use:
-- `"15 min"`, `"30 min"`, `"45 min"`
-- `"1 h"`, `"1 h 15"`, `"2 h"`, `"2 h 30"`
-- `"4 h (incluant repos)"` for clarification when needed
+Use European decimal comma where natural (`0,5 c. à café`). Quantities are inside the strings, not structured.
 
 ### Example
 
 ```json
 {
+  "@context": "https://schema.org",
+  "@type": "Recipe",
   "name": "Fesenjān",
-  "description": "Ragoût persan aux noix et grenade avec poulet.",
-  "recipe_yield": "4 portions",
-  "recipe_yield_quantity": 4,
-  "recipe_servings": 4,
-  "total_time": "2 h 30",
-  "prep_time": "30 min",
-  "perform_time": "2 h",
-  "recipe_category": [{"name": "Plat principal"}],
-  "tags": [{"name": "Persan"}, {"name": "Ragoût"}, {"name": "Noix"}],
-  "tools": [],
-  "org_url": "https://ottolenghi.co.uk/recipes/fesenjan",
-  "recipe_ingredient": [
-    {
-      "title": null,
-      "quantity": 300,
-      "unit": {"name": "g"},
-      "food": {"name": "noix décortiquées"},
-      "note": "300 g de noix décortiquées, grillées et finement moulues"
-    },
-    {
-      "title": null,
-      "quantity": 4,
-      "unit": null,
-      "food": {"name": "cuisses de poulet avec os et peau"},
-      "note": "4 cuisses de poulet avec os et peau (bone-in skin-on chicken thighs)"
-    },
-    {
-      "title": null,
-      "quantity": 80,
-      "unit": {"name": "ml"},
-      "food": {"name": "mélasse de grenade"},
-      "note": "80 ml de mélasse de grenade (pomegranate molasses, marque Cortas de préférence)"
-    },
-    {
-      "title": null,
-      "quantity": 2,
-      "unit": {"name": "c. à soupe"},
-      "food": {"name": "huile d'olive"},
-      "note": "2 c. à soupe d'huile d'olive"
-    },
-    {
-      "title": null,
-      "quantity": 0.5,
-      "unit": {"name": "c. à café"},
-      "food": {"name": "safran"},
-      "note": "0,5 c. à café de pistils de safran, infusés dans 2 c. à soupe d'eau chaude"
-    }
+  "description": "Ragoût persan aux noix et grenade avec poulet, mijotage long pour développer la profondeur de la sauce.",
+  "recipeYield": "4 portions",
+  "prepTime": "PT30M",
+  "cookTime": "PT2H",
+  "totalTime": "PT2H30M",
+  "recipeCategory": "Plat principal",
+  "recipeCuisine": "Persane",
+  "keywords": "persan, ragoût, noix, grenade, mijoté",
+  "url": "https://ottolenghi.co.uk/recipes/fesenjan",
+  "tool": ["Cocotte épaisse 4 L", "Robot mixeur"],
+  "recipeIngredient": [
+    "300 g de noix décortiquées, grillées et finement moulues",
+    "4 cuisses de poulet avec os et peau (bone-in skin-on chicken thighs)",
+    "80 ml de mélasse de grenade (pomegranate molasses, marque Cortas de préférence)",
+    "2 c. à soupe d'huile d'olive",
+    "1 gros oignon, finement haché",
+    "0,5 c. à café de pistils de safran, infusés dans 2 c. à soupe d'eau chaude",
+    "1 c. à café de gros sel"
   ],
-  "recipe_instructions": [
-    {"text": "Faire griller les noix dans une poêle sèche à feu moyen, 8 min, jusqu'à coloration profonde. Laisser refroidir, puis mixer en pâte grossière."},
-    {"text": "Saisir le poulet dans une cocotte avec 2 c. à soupe d'huile, 4 min par face. Réserver."},
-    {"text": "Dans la même cocotte, ajouter la pâte de noix et 600 ml d'eau. Cuire à feu doux, 30 min, en remuant souvent."},
-    {"text": "Remettre le poulet, ajouter la mélasse de grenade et le safran infusé. Mijoter à couvert, 1 h 30, jusqu'à ce que la sauce soit brun foncé et que le poulet se détache."}
-  ],
-  "notes": [
-    {
-      "title": "Note du chef",
-      "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Source principale : Ottolenghi *Jerusalem*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."
-    },
-    {
-      "title": "Sources",
-      "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur. Version NYT Cooking inaccessible (paywall)."
-    }
-  ],
-  "extras": {
-    "synthesis_date": "2026-05-05",
-    "skill_version": "recipe-forge v4",
-    "language": "fr"
-  }
+  "recipeInstructions": [
+    {"@type": "HowToStep", "text": "Faire griller les noix dans une poêle sèche à feu moyen, 8 min, jusqu'à coloration profonde. Laisser refroidir, puis mixer en pâte grossière."},
+    {"@type": "HowToStep", "text": "Saisir le poulet dans une cocotte avec 2 c. à soupe d'huile, 4 min par face. Réserver."},
+    {"@type": "HowToStep", "text": "Faire suer l'oignon dans la même cocotte, 5 min jusqu'à transparence."},
+    {"@type": "HowToStep", "text": "Ajouter la pâte de noix et 600 ml d'eau. Cuire à feu doux, 30 min, en remuant souvent."},
+    {"@type": "HowToStep", "text": "Remettre le poulet, ajouter la mélasse de grenade et le safran infusé. Mijoter à couvert, 1 h 30, jusqu'à ce que la sauce soit brun foncé et que le poulet se détache."},
+    {"@type": "HowToStep", "name": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Ottolenghi *Jerusalem*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
+    {"@type": "HowToStep", "name": "Sources", "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur. Version NYT Cooking inaccessible (paywall). Synthétisée par recipe-forge v6 le 2026-05-05."}
+  ]
 }
 ```
 
 ## After output
 
-End the response with one short line:
+End the response with this exact paste warning (mandatory):
 
-> Coller le bloc JSON dans Mealie → Recipes → Create Recipe → Create from JSON.
+> **Coller** dans Mealie → Recipes → Create Recipe → Create from JSON.
+>
+> ⚠️ **Le tout premier caractère collé doit être `{`** — pas d'espace, pas de saut
+> de ligne, pas de fence \`\`\`json. Utiliser le bouton « copier » du bloc de
+> code ci-dessus, ou enregistrer dans un fichier (`pbpaste`/`xclip`/`wl-copy`)
+> et coller depuis là. Sinon Mealie répond `BAD_RECIPE_DATA`.
 
 No further commentary unless the user asks a follow-up.
 
 ## Special cases
 
-- **User provides a single URL only**: still try to find 1–2 alternates via web_search to enable cross-referencing. If alternates can't be found, proceed with one source and note in the chef's note that this recipe was not cross-referenced.
+- **User provides a single URL only**: still try to find 1–2 alternates via web_search to enable cross-referencing. If alternates can't be found, proceed with one source and note in the chef's HowToStep that this recipe was not cross-referenced.
 - **All sources unfetchable**: stop and tell the user. Do not fabricate a recipe from training data alone — that defeats the entire point of the skill.
 - **Source is in English only**: translate to French. The French recipe is the contract. Keep ambiguous technical terms (meat cuts especially) in parens.
 - **Source is in French already**: use directly; only translate if the source uses unusual regional vocabulary.

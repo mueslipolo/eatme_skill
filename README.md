@@ -1,7 +1,8 @@
 # eatme — recipe-forge skill
 
 A Claude skill that synthesises a canonical recipe **in French** from multiple
-trusted sources and outputs [Mealie](https://mealie.io)-importable JSON.
+trusted sources and outputs **schema.org/Recipe JSON-LD** ready to paste
+into [Mealie](https://mealie.io)'s "Create Recipe → Create from JSON" form.
 
 Designed for an experienced French-speaking home cook who wants the *synthesis*
 of several versions of a dish (Ottolenghi vs. Persian-Mama vs. NYT Cooking)
