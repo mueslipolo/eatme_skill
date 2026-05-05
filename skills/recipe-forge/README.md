@@ -1,7 +1,9 @@
 # recipe-forge skill
 
-A Claude skill that synthesises a canonical bilingual (English + French) recipe
-from multiple trusted sources and outputs Mealie-importable JSON.
+A Claude skill that synthesises a canonical recipe **in French** from multiple
+trusted sources and outputs Mealie-importable JSON. English fallbacks are
+preserved in parentheses inside the ingredient note when translation is
+ambiguous (meat cuts, specific flour types, US-specific ingredients).
 
 ## Install on Claude.ai (web)
 
@@ -27,7 +29,7 @@ Restart Claude Code. The skill becomes available as `/recipe-forge`.
 /recipe-forge youtube.com/watch?v=...
 ```
 
-No arguments — the skill always outputs bilingual (EN/FR) recipes with metric units and uses the source's serving size (defaults to 4–6 if none given).
+No arguments — the skill always outputs French recipes with metric units, uses the source's serving size (defaults to 4–6 if none given), and keeps English fallbacks in parens for ambiguous technical terms (`paleron de bœuf (chuck roast)`, `farine T55 (all-purpose flour)`, etc.).
 
 The skill outputs three sections:
 1. **SOURCES table** — what was fetched, what failed, which is the spine

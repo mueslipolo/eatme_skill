@@ -1,13 +1,18 @@
 # eatme — recipe-forge skill
 
-A Claude skill that synthesises a canonical **bilingual (English + French)
-recipe** from multiple trusted sources and outputs
-[Mealie](https://mealie.io)-importable JSON.
+A Claude skill that synthesises a canonical recipe **in French** from multiple
+trusted sources and outputs [Mealie](https://mealie.io)-importable JSON.
 
-Designed for an experienced home cook who wants the *synthesis* of several
-versions of a dish (Ottolenghi vs. Persian-Mama vs. NYT Cooking) rather
-than just a one-source import. Sources are cited; disagreements are
+Designed for an experienced French-speaking home cook who wants the *synthesis*
+of several versions of a dish (Ottolenghi vs. Persian-Mama vs. NYT Cooking)
+rather than just a one-source import. Sources are cited; disagreements are
 surfaced as decisions; quantities are never invented.
+
+French is the canonical language because it is the language of cooking.
+English fallbacks are preserved in parentheses inside the ingredient note
+when translation would lose precision — meat cuts (`paleron de bœuf
+(chuck roast)`), flour types (`farine T55 (all-purpose flour)`), and
+US-specific ingredients without a clean French equivalent.
 
 ## What it does
 
@@ -16,21 +21,17 @@ Given a dish name, a recipe URL, or a YouTube link, the skill:
 1. Discovers (or fetches) 2–5 reputable sources
 2. Cross-references them; picks a coherent *spine* recipe and flags real disagreements as decisions
 3. Outputs Mealie-compatible JSON with metric-first units, short technique-aware instructions, structured ingredients, and explicit source citations
-4. All user-facing fields are bilingual (EN + FR)
+4. All output is in French; English technical terms preserved in parens where translation is ambiguous
 
 ## Repository layout
 
 ```
 .
 ├── README.md                          # this file
-├── skills/
-│   └── recipe-forge/
-│       ├── SKILL.md                   # the skill itself
-│       └── README.md                  # install + usage details
-└── docs/
-    ├── project-classification.md      # design decisions
-    ├── research-report.md             # ecosystem analysis
-    └── assumptions-challenged.md      # critical review
+└── skills/
+    └── recipe-forge/
+        ├── SKILL.md                   # the skill itself
+        └── README.md                  # install + usage details
 ```
 
 ## Install
