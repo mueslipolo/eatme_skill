@@ -104,19 +104,46 @@ For any dish in these traditions, search for the relevant cookbook's version of 
 - J. Kenji López-Alt, *The Food Lab* — technique-driven, science-backed
 - Samin Nosrat, *Salt Fat Acid Heat*
 
-**Chinese / Asian**
+**Chinese / East Asian**
 - Fuchsia Dunlop, *Land of Plenty* (Sichuanese) / *Every Grain of Rice* (everyday Chinese) — definitive Western-language Chinese
-- Madhur Jaffrey, *An Invitation to Indian Cooking* / *Madhur Jaffrey's Indian Cookery* — Indian canon
 - David Thompson, *Thai Food* — Thai reference
 - Andrea Nguyen, *Vietnamese Food Any Day* / *Asian Dumplings*
 - Maangchi, *Maangchi's Real Korean Cooking*
 - Nami Hirasawa Chen (*Just One Cookbook*) — Japanese home cooking
 
-**Spanish / Latin American**
-- Penelope Casas, *The Foods and Wines of Spain*
-- Diana Kennedy, *The Cuisines of Mexico* / *Oaxaca al Gusto*
-- Gastón Acurio, *Peru: The Cookbook*
-- Pati Jinich, *Pati's Mexican Table*
+**Indian / South Asian**
+- Madhur Jaffrey, *An Invitation to Indian Cooking* (1973) / *Madhur Jaffrey's Indian Cookery* (1982) — definitive English-language Indian canon
+- Pushpesh Pant, *India: The Cookbook* (Phaidon, 1000+ recipes) — encyclopedic regional reference
+- Camellia Panjabi, *50 Great Curries of India* — masala-system foundations
+- Vivek Singh, *The Cinnamon Club Cookbook* — modern Indian (London)
+- Meera Sodha, *Made in India* / *East* — Gujarati home cooking, vegetable-forward
+- Asma Khan, *Asma's Indian Kitchen* — Bengali / Hyderabadi
+- Niloufer Ichaporia King, *My Bombay Kitchen* — Parsi
+- Yamuna Devi, *Lord Krishna's Cuisine* — vegetarian deep reference
+
+**Mexican**
+- Diana Kennedy, *The Cuisines of Mexico* (1972) / *Oaxaca al Gusto* / *The Essential Cuisines of Mexico* — gold standard, pre-fusion authentic
+- Rick Bayless, *Authentic Mexican* / *Mexico One Plate at a Time* — most-respected Anglo Mexican reference
+- Patricia Quintana, *Mulli: El Libro de los Moles* — definitive on moles
+- Margarita Carrillo Arronte, *Mexico: The Cookbook* (Phaidon) — encyclopedic regional
+- Pati Jinich, *Pati's Mexican Table* / *Mexican Today* — accessible home cooking
+- Enrique Olvera, *Mexico from the Inside Out* — modern haute Mexican (Pujol)
+- Zarela Martinez, *The Food and Life of Oaxaca* — Oaxacan
+- Gabriela Cámara, *My Mexico City Kitchen* — Contramar / coastal Mexican
+
+**Spanish / Latin American (autres)**
+- Penelope Casas, *The Foods and Wines of Spain* — Spanish reference
+- Gastón Acurio, *Peru: The Cookbook* — Peruvian canon
+
+**Swiss**
+- Marianne Kaltenbach, *Aus Schweizer Küchen* (DE) / *Tout simplement Suisse* (FR) — household canon, all three linguistic regions
+- Sue Style, *A Taste of Switzerland* — English-language Swiss reference; strong on regional context
+- Andreas Caminada, *Pure Leidenschaft* / *Pure Cuisine* — modern high-Swiss cuisine (Schauenstein)
+- *Tiptopf* (Schweizerischer Hauswirtschaftlicher Fachverband) — the cookbook every Swiss-German student learns from; ubiquitous baseline
+- Annemarie Wildeisen, *Wildeisens Kochen* — popular Swiss-German home cooking
+- Hiltl Restaurant, *Hiltl: The Cookbook* — Zürich, oldest vegetarian restaurant in the world
+- Anton Mosimann, *World Cuisine* — Swiss chef working internationally; technique-focused
+- For Romandie / Italian-Swiss specifics: French and Italian canons (Bocuse, Hazan) often apply directly; Swiss regional dishes (papet vaudois, capuns, bündner gerstensuppe) are best found via local sites (Swissmilk, Schweizer Bauern, Tibits)
 
 **Reference / technique (cuisine-agnostic)**
 - Harold McGee, *On Food and Cooking* — the food-science bible
@@ -371,7 +398,7 @@ Schema.org/Recipe has no `notes` field. Append two trailing HowToSteps:
 {"@type": "HowToStep", "name": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v5 le YYYY-MM-DD."}
 ```
 
-The Sources HowToStep is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v9`).
+The Sources HowToStep is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v10`).
 
 #### Forbidden — DO NOT include
 
@@ -428,7 +455,7 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
     {"@type": "HowToStep", "text": "Ajouter la pâte de noix et 600 ml d'eau. Cuire à feu doux, 30 min, en remuant souvent."},
     {"@type": "HowToStep", "text": "Remettre le poulet, ajouter la mélasse de grenade et le safran infusé. Mijoter à couvert, 1 h 30, jusqu'à ce que la sauce soit brun foncé et que le poulet se détache."},
     {"@type": "HowToStep", "name": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Ottolenghi *Jerusalem*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
-    {"@type": "HowToStep", "name": "Sources", "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur ; Kenji López-Alt, *Serious Eats* (via republication r/recipes). Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v9 le 2026-05-05."}
+    {"@type": "HowToStep", "name": "Sources", "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur ; Kenji López-Alt, *Serious Eats* (via republication r/recipes). Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v10 le 2026-05-05."}
   ]
 }
 ```
