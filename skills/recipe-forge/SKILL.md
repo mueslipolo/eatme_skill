@@ -172,6 +172,14 @@ Use **web_fetch** on each source. If a fetch fails (paywall, anti-bot, JS-heavy)
 
 **Capture image URL while fetching.** When web_fetching a source, also extract any recipe photo URL — look for `og:image` meta tag, schema.org/Recipe `image` field in embedded JSON-LD, or the most prominent recipe image in the article. Note the URL alongside the recipe content. Use the spine source's image as primary; fall back to other sources only if the spine has no usable image. Skip the `image` field entirely if no source has a usable photo. Never use stock images or invent URLs.
 
+**Image URL gotcha — must return HTTP 200 directly, no redirect.** Mealie's image downloader (`mealie/services/recipe/recipe_data_service.py::scrape_image()`) uses `AsyncClient(transport=safehttp.AsyncSafeTransport)` without `follow_redirects=True`. So an image URL that returns 301/302 (Squarespace's `static1.squarespace.com/...?format=1500w` is the canonical example) **fails silently** — `r.status_code != 200` returns None and the recipe gets imported with no photo.
+
+When choosing an image URL:
+- **Test it.** A URL that returns 301/302 in `curl -sI <url>` will not work.
+- **Prefer direct CDN URLs.** Squarespace's CDN (`images.squarespace-cdn.com/content/v1/.../slug`) typically returns 200 directly; the `static1.squarespace.com/...?format=N` form 301-redirects there.
+- **For sites like Squarespace, look at the actual `<img src=...>` tag in the article body**, not just the og:image meta — the inline image is usually the post-redirect URL.
+- If the spine source's image only resolves via redirect, follow the redirect manually and use the final URL — or skip the `image` field rather than ship a broken one.
+
 #### Republication fallback (try before marking `unfetched`)
 
 Famous sites (NYT Cooking, Serious Eats, Bon Appétit, Saveur) often paywall or block bots, but their recipes routinely get reposted on blogs, forums, Reddit, and aggregators. Before declaring a source dead:
@@ -222,7 +230,7 @@ Before producing the JSON, walk these checks. Fix anything that fails:
 - [ ] **Time math:** `totalTime` = `prepTime` + `cookTime` (ISO-8601 arithmetic, not approximation). Rest/marinate/rise time folds into `cookTime`.
 - [ ] **Yield:** `recipeYield` matches the spine source's yield (or 4–6 default).
 - [ ] **Notes block:** top-level `notes` array (NOT trailing HowToSteps) contains both "Note du chef" and "Sources" entries; Sources includes synthesis date and skill version string.
-- [ ] **Image (if available):** spine source's recipe photo URL captured during fetch; add as `image` field. Skip rather than fabricate or use stock images.
+- [ ] **Image (if available):** spine source's recipe photo URL captured during fetch; add as `image` field. Skip rather than fabricate or use stock images. **The URL must return HTTP 200 directly — Mealie does not follow redirects on image fetches.** Prefer direct CDN URLs over redirecting og:image URLs.
 - [ ] **Dietary tags:** scan ingredients; append every applicable tag (`Vegan`, `Végétarien`, `Sans gluten`, `Sans lactose`, `Sans œufs`, `Sans fruits à coque`) to `keywords`. Skip rather than guess.
 - [ ] **JSON validity:** valid JSON syntax, starts with `{`.
 
@@ -409,11 +417,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v13 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v14 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v13`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v14`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -475,7 +483,7 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
   ],
   "notes": [
     {"title": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Najmieh Batmanglij, *Food of Life*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
-    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (spine) ; Persian-Mama ; Saveur ; Sabrina Ghayour, *Persiana*. Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v13 le 2026-05-05."}
+    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (spine) ; Persian-Mama ; Saveur ; Sabrina Ghayour, *Persiana*. Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v14 le 2026-05-05."}
   ]
 }
 ```
