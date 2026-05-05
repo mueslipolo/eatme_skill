@@ -170,6 +170,8 @@ Mark in SOURCES table as `fetched (book excerpt via <site>)` with both the book 
 ### 2. Source fetch
 Use **web_fetch** on each source. If a fetch fails (paywall, anti-bot, JS-heavy), **don't give up immediately** — try the republication fallback first.
 
+**Capture image URL while fetching.** When web_fetching a source, also extract any recipe photo URL — look for `og:image` meta tag, schema.org/Recipe `image` field in embedded JSON-LD, or the most prominent recipe image in the article. Note the URL alongside the recipe content. Use the spine source's image as primary; fall back to other sources only if the spine has no usable image. Skip the `image` field entirely if no source has a usable photo. Never use stock images or invent URLs.
+
 #### Republication fallback (try before marking `unfetched`)
 
 Famous sites (NYT Cooking, Serious Eats, Bon Appétit, Saveur) often paywall or block bots, but their recipes routinely get reposted on blogs, forums, Reddit, and aggregators. Before declaring a source dead:
@@ -220,6 +222,7 @@ Before producing the JSON, walk these checks. Fix anything that fails:
 - [ ] **Time math:** `totalTime` = `prepTime` + `cookTime` (ISO-8601 arithmetic, not approximation). Rest/marinate/rise time folds into `cookTime`.
 - [ ] **Yield:** `recipeYield` matches the spine source's yield (or 4–6 default).
 - [ ] **Notes block:** top-level `notes` array (NOT trailing HowToSteps) contains both "Note du chef" and "Sources" entries; Sources includes synthesis date and skill version string.
+- [ ] **Image (if available):** spine source's recipe photo URL captured during fetch; add as `image` field. Skip rather than fabricate or use stock images.
 - [ ] **Dietary tags:** scan ingredients; append every applicable tag (`Vegan`, `Végétarien`, `Sans gluten`, `Sans lactose`, `Sans œufs`, `Sans fruits à coque`) to `keywords`. Skip rather than guess.
 - [ ] **JSON validity:** valid JSON syntax, starts with `{`.
 
@@ -386,6 +389,7 @@ Output is **schema.org/Recipe JSON-LD**. This is the format Mealie's
 | `keywords` | string | Comma-separated French tags. |
 | `url` | string | URL of the spine source. |
 | `tool` | array of strings | Tools used; `[]` if none. |
+| `image` | string (URL) | URL of a recipe photo from the spine source. Mealie downloads it on import. Skip the field entirely if no source has a usable image — never invent one. |
 | `notes` | array of `{"title": string, "text": string}` | **Non-standard schema.org extension that Mealie reads directly.** Used for chef's note and sources. Renders as a separate "Notes" block in the Mealie UI, distinct from cooking steps. See "Where chef's note and sources go". |
 
 #### `HowToStep` schema (entries in `recipeInstructions`)
@@ -405,11 +409,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v12 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v13 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v12`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v13`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -451,6 +455,7 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
   "recipeCuisine": "Persane",
   "keywords": "persan, ragoût, noix, grenade, mijoté, Sans gluten, Sans lactose, Sans œufs",
   "url": "https://ottolenghi.co.uk/recipes/fesenjan",
+  "image": "https://ottolenghi.co.uk/recipes/fesenjan/og-image.jpg",
   "tool": ["Cocotte épaisse 4 L", "Robot mixeur"],
   "recipeIngredient": [
     "300 g de noix décortiquées, grillées et finement moulues",
@@ -470,7 +475,7 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
   ],
   "notes": [
     {"title": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Najmieh Batmanglij, *Food of Life*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
-    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (spine) ; Persian-Mama ; Saveur ; Sabrina Ghayour, *Persiana*. Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v12 le 2026-05-05."}
+    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (spine) ; Persian-Mama ; Saveur ; Sabrina Ghayour, *Persiana*. Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v13 le 2026-05-05."}
   ]
 }
 ```
