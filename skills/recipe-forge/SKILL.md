@@ -59,10 +59,32 @@ If only a dish name was given, use **web_search** to find 3–5 reputable versio
 **Avoid** SEO-bloat blogs, Pinterest-style sites, generic content farms.
 
 ### 2. Source fetch
-Use **web_fetch** on each source. If a fetch fails (paywall, anti-bot, JS-heavy):
-- Mark it `unfetched` in the SOURCES table
-- Proceed with the rest unless fewer than 2 succeeded
-- If <2 sources succeeded, ask the user to paste content from one source
+Use **web_fetch** on each source. If a fetch fails (paywall, anti-bot, JS-heavy), **don't give up immediately** — try the republication fallback first.
+
+#### Republication fallback (try before marking `unfetched`)
+
+Famous sites (NYT Cooking, Serious Eats, Bon Appétit, Saveur) often paywall or block bots, but their recipes routinely get reposted on blogs, forums, Reddit, and aggregators. Before declaring a source dead:
+
+1. Run a **web_search** for the chef/dish along with disambiguating keywords:
+   - `"<chef name> <dish> recipe full text"`
+   - `"<chef name> <dish> reddit"`
+   - `"<dish> <site name> reproduction"`
+   - Examples: `Kenji Lopez-Alt slow tomato sauce recipe`, `Ottolenghi fesenjan Jerusalem book recipe`
+2. Likely places to find faithful copies:
+   - Reddit (r/recipes, r/52weeksofcooking, r/AskCulinary, niche subs)
+   - Food blogs that explicitly attribute the original — search the chef's name in body text
+   - Copy-Me-That, Eat-Your-Books, AnyList community shares
+   - GitHub gists, Pastebin (lower trust — verify carefully)
+3. **Verify faithfulness** before using:
+   - Explicit attribution to the original source/chef
+   - Ingredient list matches any partial info available from the original (preview, schema.org snippets, social-media excerpts)
+   - Recipe author hasn't editorialised quantities ("I doubled the salt")
+4. If a faithful republication is found, mark the source as `fetched (via republication)` in the SOURCES table and record **both URLs** (canonical + actual). In the Sources HowToStep, cite the original chef/site as the authority and append `(via <republication URL>)`.
+
+#### When to give up
+
+- If no faithful republication exists after a reasonable search (2–3 queries), mark the source `unfetched` and proceed.
+- If fewer than 2 sources are accessible (originals + republications combined), ask the user to paste content from one source.
 
 ### 3. YouTube handling
 For YouTube URLs:
@@ -89,6 +111,7 @@ Before producing the JSON, walk these checks. Fix anything that fails:
 - [ ] **Time math:** `totalTime` = `prepTime` + `cookTime` (ISO-8601 arithmetic, not approximation). Rest/marinate/rise time folds into `cookTime`.
 - [ ] **Yield:** `recipeYield` matches the spine source's yield (or 4–6 default).
 - [ ] **Sources block:** trailing HowToStep with `name: "Sources"` includes synthesis date and skill version string.
+- [ ] **Dietary tags:** scan ingredients; append every applicable tag (`Vegan`, `Végétarien`, `Sans gluten`, `Sans lactose`, `Sans œufs`, `Sans fruits à coque`) to `keywords`. Skip rather than guess.
 - [ ] **JSON validity:** valid JSON syntax, starts with `{`.
 
 ### 7. Output — see OUTPUT FORMAT.
@@ -153,6 +176,50 @@ might want the original English reference.
 - Quantities and units alone
 - Recipe instructions (technique translates fine)
 
+## Dietary tag auto-detection
+
+After synthesising the ingredient list, scan it and append the appropriate
+French dietary tags to `keywords`. **Conservative rule: only add a tag if
+confident. When in doubt, skip — better to undercount than mislabel.**
+
+### Tags to detect
+
+| Tag | Add when the recipe contains NONE of these (in any form, including hidden) |
+|---|---|
+| `Vegan` | viande, poisson, volaille, fruits de mer, œuf, lait, crème, beurre, fromage, yaourt, miel, gélatine, anchois, lardons, charcuterie, bouillon de viande/volaille/poisson, sauce Worcestershire (anchois), sauce de poisson |
+| `Végétarien` | viande, poisson, volaille, fruits de mer, anchois, gélatine, lardons, charcuterie, bouillon de viande/volaille/poisson, sauce Worcestershire, sauce de poisson |
+| `Sans gluten` | blé (et farines T45/T55/T65/T80), épeautre, seigle, orge, avoine non certifiée GF, pain, pâtes standard, couscous, semoule de blé, bulgur, sauce soja standard (utiliser tamari pour GF), bière |
+| `Sans lactose` | lait, crème (toutes), beurre, fromage, yaourt, ghee, lactosérum, caséine, lait en poudre |
+| `Sans œufs` | œuf entier, jaune, blanc, mayonnaise standard, certaines pâtes fraîches, blanc monté |
+| `Sans fruits à coque` | noix, amande, noisette, pistache, noix de cajou, pécan, macadamia, noix de pin, noix du Brésil |
+
+### Implication and overlap
+
+- A truly vegan recipe is also `Végétarien`, `Sans lactose`, `Sans œufs`. Emit **all four** — users may filter on any.
+- `Sans gluten` and `Sans fruits à coque` are independent of vegan/vegetarian status — evaluate separately.
+- `Végétarien` is added even when not vegan (e.g. recipe with cheese but no meat).
+
+### Hidden ingredients — common gotchas
+
+- **Sauce Worcestershire** : contient des anchois → pas végétarien.
+- **Sauce soja standard** : contient du blé → pas sans gluten (utiliser tamari).
+- **Bouillons commerciaux** : souvent à base de viande → pas végétarien sauf mention explicite.
+- **Pâtes fraîches du commerce** : souvent avec œuf → pas sans œufs.
+- **Vin de cuisson** : alcool — pertinent pour halal mais pas pour les tags listés ici.
+
+If a recipe relies on a sauce or stock whose composition isn't explicit, treat it as containing the most-restrictive ingredient and skip the dietary tag.
+
+### Worked examples
+
+| Recipe | Detected tags |
+|---|---|
+| Ratatouille (légumes + huile d'olive) | `Vegan, Végétarien, Sans lactose, Sans œufs, Sans gluten, Sans fruits à coque` |
+| Sauce tomate à la mirepoix (notre exemple) | `Vegan, Végétarien, Sans lactose, Sans œufs, Sans gluten, Sans fruits à coque` |
+| Fesenjān (poulet + noix) | `Sans gluten, Sans lactose, Sans œufs` (pas vegan/végétarien à cause du poulet ; pas sans fruits à coque à cause des noix) |
+| Lasagnes bolognaise | aucun tag (viande, blé, lait, œuf) |
+| Tarte au citron meringuée | `Végétarien` seulement |
+| Risotto aux champignons (au beurre + parmesan) | `Végétarien, Sans gluten` |
+
 ## OUTPUT FORMAT
 
 Output exactly these three sections, in order. Sections 1 and 2 stay in
@@ -160,11 +227,14 @@ French for the user's reading; only the JSON goes into Mealie.
 
 ### Section 1 — SOURCES table
 
+When a republication was used, show the original URL → actual URL with an arrow.
+
 | # | Source | URL | Status | Spine? |
 |---|---|---|---|---|
-| 1 | Ottolenghi, *Jerusalem* | https://… | fetched | ✓ |
-| 2 | Persian-Mama | https://… | fetched | |
-| 3 | NYT Cooking | https://… | paywalled | |
+| 1 | Ottolenghi, *Jerusalem* | https://ottolenghi.co.uk/… | fetched | ✓ |
+| 2 | Persian-Mama | https://persianmama.com/… | fetched | |
+| 3 | Kenji López-Alt, *Serious Eats* | https://seriouseats.com/… → https://reddit.com/r/recipes/… | fetched (republication) | |
+| 4 | NYT Cooking | https://cooking.nytimes.com/… | unfetched (paywall, no faithful republication found) | |
 
 ### Section 2 — DECISIONS
 
@@ -225,7 +295,7 @@ Schema.org/Recipe has no `notes` field. Append two trailing HowToSteps:
 {"@type": "HowToStep", "name": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v5 le YYYY-MM-DD."}
 ```
 
-The Sources HowToStep is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v6`).
+The Sources HowToStep is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v8`).
 
 #### Forbidden — DO NOT include
 
@@ -263,7 +333,7 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
   "totalTime": "PT2H30M",
   "recipeCategory": "Plat principal",
   "recipeCuisine": "Persane",
-  "keywords": "persan, ragoût, noix, grenade, mijoté",
+  "keywords": "persan, ragoût, noix, grenade, mijoté, Sans gluten, Sans lactose, Sans œufs",
   "url": "https://ottolenghi.co.uk/recipes/fesenjan",
   "tool": ["Cocotte épaisse 4 L", "Robot mixeur"],
   "recipeIngredient": [
@@ -282,7 +352,7 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
     {"@type": "HowToStep", "text": "Ajouter la pâte de noix et 600 ml d'eau. Cuire à feu doux, 30 min, en remuant souvent."},
     {"@type": "HowToStep", "text": "Remettre le poulet, ajouter la mélasse de grenade et le safran infusé. Mijoter à couvert, 1 h 30, jusqu'à ce que la sauce soit brun foncé et que le poulet se détache."},
     {"@type": "HowToStep", "name": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Ottolenghi *Jerusalem*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
-    {"@type": "HowToStep", "name": "Sources", "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur. Version NYT Cooking inaccessible (paywall). Synthétisée par recipe-forge v6 le 2026-05-05."}
+    {"@type": "HowToStep", "name": "Sources", "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur ; Kenji López-Alt, *Serious Eats* (via republication r/recipes). Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v8 le 2026-05-05."}
   ]
 }
 ```
