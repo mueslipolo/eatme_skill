@@ -49,14 +49,90 @@ No other arguments.
 ## Process (in order)
 
 ### 1. Source discovery
-If only a dish name was given, use **web_search** to find 3–5 reputable versions. Prioritise:
+If only a dish name was given, use **web_search** to find 3–5 reputable versions. Always include at least one **canonical-cookbook reference** for the cuisine (see Reference cookbooks below) when one applies — printed canon usually beats blog content for classic preparations.
 
-- Famous chefs: Ottolenghi, Hazan, Roden, David, Pépin, Robuchon, Bocuse, Ducasse, Bras, Liguori, Mallmann, Acurio, Locatelli, Slater, Hopkinson
-- Authoritative sites: NYT Cooking, Serious Eats, BBC Good Food, Saveur, Bon Appétit Test Kitchen
-- French-language sources: La Cuisine de Bernard, Marmiton, Cuisine Actuelle, Chef Simon, 750g, Papilles et Pupilles
+**Web prioritisation:**
+
+- Famous chefs (online presence): Ottolenghi, Hazan, Roden, David, Pépin, Robuchon, Bocuse, Ducasse, Bras, Liguori, Mallmann, Acurio, Locatelli, Slater, Hopkinson
+- Authoritative sites: NYT Cooking, Serious Eats, BBC Good Food, Saveur, Bon Appétit Test Kitchen, Académie du Goût
+- French-language: La Cuisine de Bernard, Marmiton, Cuisine Actuelle, Chef Simon, 750g, Papilles et Pupilles
 - Regional authority sites: Persian-Mama (Iranian), Maangchi (Korean), Just One Cookbook (Japanese), Vincenzo's Plate (Italian)
 
 **Avoid** SEO-bloat blogs, Pinterest-style sites, generic content farms.
+
+#### Reference cookbooks (canonical authorities by cuisine)
+
+For any dish in these traditions, search for the relevant cookbook's version of the recipe (often republished on Reddit, in book reviews, or excerpted on the publisher's site). Cite as "<Author>, *<Title>* (<year>)" in the SOURCES table.
+
+**French**
+- Auguste Escoffier, *Le Guide Culinaire* (1903) — bedrock of French haute cuisine
+- *Larousse Gastronomique* (Joël Robuchon, ed.) — encyclopedic reference
+- Julia Child, *Mastering the Art of French Cooking* (1961) — French technique exposition
+- Jacques Pépin, *La Technique* / *La Méthode* — fundamentals
+- Paul Bocuse, *La Cuisine du Marché* — bourgeois canon
+- Anne Willan, *La Varenne Pratique*
+- Michel Bras, *Essential Cuisine*
+- Dorie Greenspan, *My Paris Kitchen* — modern American-French
+
+**Italian**
+- Marcella Hazan, *Essentials of Classic Italian Cooking* — gold standard for non-Italians
+- Pellegrino Artusi, *La Scienza in Cucina* (1891) — historical foundation
+- *Il Cucchiaio d'Argento* (*The Silver Spoon*) — Italian household reference
+- Lidia Bastianich, *Lidia's Italy* / *Lidia's Mastering the Art of Italian Cuisine*
+- Giorgio Locatelli, *Made in Italy*
+- Anna Del Conte, *Gastronomy of Italy*
+- Antonio Carluccio, *Italia*
+
+**Middle Eastern / Mediterranean**
+- Claudia Roden, *A Book of Middle Eastern Food* / *The Book of Jewish Food* — definitive for the region
+- Yotam Ottolenghi, *Jerusalem* / *Plenty* / *Simple* — modern levantine
+- Sami Tamimi, *Falastin* — Palestinian
+- Paula Wolfert, *The Food of Morocco* / *Mediterranean Clay Pot Cooking*
+- Greg Malouf, *Saraban*
+
+**British**
+- Jane Grigson, *English Food*
+- Nigel Slater, *Tender* / *The Kitchen Diaries*
+- Hugh Fearnley-Whittingstall, *River Cottage Cookbook*
+- Delia Smith, *How to Cook* — fundamentals reference
+- Heston Blumenthal, *In Search of Perfection* — technique deep-dives
+
+**American**
+- James Beard, *American Cookery*
+- Thomas Keller, *The French Laundry Cookbook* / *Bouchon* / *Ad Hoc at Home*
+- Alice Waters, *The Art of Simple Food* / *Chez Panisse Vegetables*
+- J. Kenji López-Alt, *The Food Lab* — technique-driven, science-backed
+- Samin Nosrat, *Salt Fat Acid Heat*
+
+**Chinese / Asian**
+- Fuchsia Dunlop, *Land of Plenty* (Sichuanese) / *Every Grain of Rice* (everyday Chinese) — definitive Western-language Chinese
+- Madhur Jaffrey, *An Invitation to Indian Cooking* / *Madhur Jaffrey's Indian Cookery* — Indian canon
+- David Thompson, *Thai Food* — Thai reference
+- Andrea Nguyen, *Vietnamese Food Any Day* / *Asian Dumplings*
+- Maangchi, *Maangchi's Real Korean Cooking*
+- Nami Hirasawa Chen (*Just One Cookbook*) — Japanese home cooking
+
+**Spanish / Latin American**
+- Penelope Casas, *The Foods and Wines of Spain*
+- Diana Kennedy, *The Cuisines of Mexico* / *Oaxaca al Gusto*
+- Gastón Acurio, *Peru: The Cookbook*
+- Pati Jinich, *Pati's Mexican Table*
+
+**Reference / technique (cuisine-agnostic)**
+- Harold McGee, *On Food and Cooking* — the food-science bible
+- Nathan Myhrvold et al., *Modernist Cuisine* — modernist technique
+- *Larousse Gastronomique* (already listed under French; serves cross-cuisine reference too)
+
+**How to cite a cookbook source**
+
+Cookbooks usually aren't web-fetchable directly. Search for the recipe republished or excerpted:
+
+```
+search: "Marcella Hazan Bolognese sauce essentials" → likely a Reddit thread or food blog quoting verbatim
+search: "Roden fesenjan Middle Eastern Food recipe" → blog or cookbook review excerpting the recipe
+```
+
+Mark in SOURCES table as `fetched (book excerpt via <site>)` with both the book reference and the URL where the excerpt was found. Treat the cookbook as the spine when its version is canonical for the cuisine.
 
 ### 2. Source fetch
 Use **web_fetch** on each source. If a fetch fails (paywall, anti-bot, JS-heavy), **don't give up immediately** — try the republication fallback first.
@@ -295,7 +371,7 @@ Schema.org/Recipe has no `notes` field. Append two trailing HowToSteps:
 {"@type": "HowToStep", "name": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v5 le YYYY-MM-DD."}
 ```
 
-The Sources HowToStep is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v8`).
+The Sources HowToStep is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v9`).
 
 #### Forbidden — DO NOT include
 
@@ -352,7 +428,7 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
     {"@type": "HowToStep", "text": "Ajouter la pâte de noix et 600 ml d'eau. Cuire à feu doux, 30 min, en remuant souvent."},
     {"@type": "HowToStep", "text": "Remettre le poulet, ajouter la mélasse de grenade et le safran infusé. Mijoter à couvert, 1 h 30, jusqu'à ce que la sauce soit brun foncé et que le poulet se détache."},
     {"@type": "HowToStep", "name": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Ottolenghi *Jerusalem*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
-    {"@type": "HowToStep", "name": "Sources", "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur ; Kenji López-Alt, *Serious Eats* (via republication r/recipes). Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v8 le 2026-05-05."}
+    {"@type": "HowToStep", "name": "Sources", "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur ; Kenji López-Alt, *Serious Eats* (via republication r/recipes). Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v9 le 2026-05-05."}
   ]
 }
 ```
