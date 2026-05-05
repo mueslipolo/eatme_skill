@@ -90,6 +90,12 @@ For any dish in these traditions, search for the relevant cookbook's version of 
 - Paula Wolfert, *The Food of Morocco* / *Mediterranean Clay Pot Cooking*
 - Greg Malouf, *Saraban*
 
+**Persian / Iranian** (subset of Middle Eastern; deep enough to merit its own list)
+- Najmieh Batmanglij, *Food of Life* (1986) — the Persian bible; ceremonies, technique, regional depth
+- Sabrina Ghayour, *Persiana* (2014) / *Sirocco* / *Bazaar* / *Feasts* — modern, accessible, deeply Persian-influenced; Observer Food Monthly Best New Cookbook 2014
+- Naz Deravian, *Bottom of the Pot* (2018) — modern Iranian-American, rich in family context
+- Margaret Shaida, *The Legendary Cuisine of Persia* (1992) — historical / classical reference
+
 **British**
 - Jane Grigson, *English Food*
 - Nigel Slater, *Tender* / *The Kitchen Diaries*
@@ -398,7 +404,7 @@ Schema.org/Recipe has no `notes` field. Append two trailing HowToSteps:
 {"@type": "HowToStep", "name": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v5 le YYYY-MM-DD."}
 ```
 
-The Sources HowToStep is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v10`).
+The Sources HowToStep is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v11`).
 
 #### Forbidden — DO NOT include
 
@@ -455,7 +461,7 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
     {"@type": "HowToStep", "text": "Ajouter la pâte de noix et 600 ml d'eau. Cuire à feu doux, 30 min, en remuant souvent."},
     {"@type": "HowToStep", "text": "Remettre le poulet, ajouter la mélasse de grenade et le safran infusé. Mijoter à couvert, 1 h 30, jusqu'à ce que la sauce soit brun foncé et que le poulet se détache."},
     {"@type": "HowToStep", "name": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Ottolenghi *Jerusalem*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
-    {"@type": "HowToStep", "name": "Sources", "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur ; Kenji López-Alt, *Serious Eats* (via republication r/recipes). Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v10 le 2026-05-05."}
+    {"@type": "HowToStep", "name": "Sources", "text": "Ottolenghi *Jerusalem* (spine) ; Persian-Mama ; Saveur ; Kenji López-Alt, *Serious Eats* (via republication r/recipes). Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v11 le 2026-05-05."}
   ]
 }
 ```
