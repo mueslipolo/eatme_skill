@@ -374,26 +374,34 @@ When a republication was used, show the original URL → actual URL with an arro
 
 | # | Source | URL | Status | Spine? |
 |---|---|---|---|---|
-| 1 | Ottolenghi, *Jerusalem* | https://ottolenghi.co.uk/… | fetched | ✓ |
-| 2 | Persian-Mama | https://persianmama.com/… | fetched | |
-| 3 | Kenji López-Alt, *Serious Eats* | https://seriouseats.com/… → https://reddit.com/r/recipes/… | fetched (republication) | |
-| 4 | NYT Cooking | https://cooking.nytimes.com/… | unfetched (paywall, no faithful republication found) | |
+| 1 | Najmieh Batmanglij, *Food of Life* (1986) | https://najmieh.com/recipes/ → http://saffronandlemons.blogspot.com/.../batmanglijs-chicken-fesenjaan.html | fetched (book excerpt via Saffron and Lemons) | ✓ |
+| 2 | Sabrina Ghayour, *Persiana* (2014) | https://foodepedia.co.uk/sabrina-ghayour/fesenjan/ | fetched | |
+| 3 | Persian-Mama | https://persianmama.com/chicken-in-walnut-pomegranate-sauce-khoresht-fesenjan/ | fetched | |
+| 4 | Naz Deravian, *Bottom of the Pot* (2018) | https://bottomofthepot.com/.../khoresh-fesenjan/ | unfetched (stream interrupted, no faithful republication) | |
 
 ### Section 2 — DECISIONS
 
 Present each significant disagreement as options for the user to pick from. **Do NOT auto-apply your own recommendation.** Stop after Sections 1 and 2 and explicitly ask the user which option they want for each decision before producing the JSON.
 
+**Each decision lists Option A as the objectively-most-authoritative choice (cookbook canon when one applies, or cross-source consensus), then alternatives that fit the user's preferences.** Cap at 3 decisions max — surface only those where the choice meaningfully changes the dish, not micro-style preferences.
+
 ```
-[D1] Traitement des noix
-  Option A — Ottolenghi : faire griller à sec dans une poêle, 8 min
-    → saveur plus nette, moins gras, plus léger
-  Option B — Persian-Mama : mixer puis frire dans l'huile jusqu'à brun-roux
-    → profondeur grillée plus marquée, plus riche
+[D1] Forme de mélasse de grenade
+  Option A — Cortas (libanaise, accessible Europe) : 250 ml + 500 ml d'eau
+    → aigre-doux modéré, équilibre standard, le plus accessible en Suisse/France
+  Option B — Rob-e Anar (pâte iranienne épaisse, version Batmanglij authentique) : 130 ml + 700 ml d'eau
+    → tradition persane, plus aigre, couleur plus foncée
+
+[D2] Cannelle
+  Option A — Batmanglij : 0,5 c. à café de cannelle moulue
+    → accent rond, classique persan
+  Option B — Ghayour, Persian-Mama : aucune
+    → goût plus pur de noix et grenade
 ```
 
 Then ask the user:
 
-> Quelles options choisis-tu (D1, D2, …) ? Réponds par lettre (`D1=A, D2=B, …`) ou « défaut » pour suivre la première option de chaque décision.
+> Quelles options choisis-tu (D1, D2, …) ? Réponds par lettre (`D1=A, D2=B, …`) ou « défaut » pour suivre l'option A de chaque décision.
 
 Wait for the user's response before producing Section 3.
 
@@ -448,11 +456,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v16 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v17 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v16`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v17`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -480,41 +488,48 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
 
 ### Example
 
+Assuming the user picked `D1=A, D2=A` (Cortas mélasse, with cannelle) for the decisions shown earlier:
+
 ```json
 {
   "@context": "https://schema.org",
   "@type": "Recipe",
-  "name": "Fesenjān",
-  "description": "Ragoût persan aux noix et grenade avec poulet, mijotage long pour développer la profondeur de la sauce.",
-  "recipeYield": "4 portions",
+  "name": "Fesenjan",
+  "description": "Khoresh persan : ragoût de poulet aux noix moulues et mélasse de grenade, mijoté lentement jusqu'à une sauce brun foncé aigre-douce.",
+  "recipeYield": "6 portions",
   "prepTime": "PT30M",
   "cookTime": "PT2H",
   "totalTime": "PT2H30M",
   "recipeCategory": "Plat principal",
   "recipeCuisine": "Persane",
-  "keywords": "persan, ragoût, noix, grenade, mijoté, Sans gluten, Sans lactose, Sans œufs",
-  "url": "https://ottolenghi.co.uk/recipes/fesenjan",
-  "image": "https://ottolenghi.co.uk/recipes/fesenjan/og-image.jpg",
+  "keywords": "persan, iranien, khoresh, ragoût, noix, grenade, mijoté, plat de fête, Sans gluten, Sans lactose, Sans œufs",
+  "url": "https://www.najmieh.com/recipes/",
+  "image": "https://persianmama.com/wp-content/uploads/2014/11/fesenjan-last.jpg",
   "tool": ["Cocotte épaisse 4 L", "Robot mixeur"],
   "recipeIngredient": [
-    "300 g de noix décortiquées, grillées et finement moulues",
-    "4 cuisses de poulet avec os et peau (bone-in skin-on chicken thighs)",
-    "80 ml de mélasse de grenade (pomegranate molasses, marque Cortas de préférence)",
-    "2 c. à soupe d'huile d'olive",
-    "1 gros oignon, finement haché",
-    "0,5 c. à café de pistils de safran, infusés dans 2 c. à soupe d'eau chaude",
-    "1 c. à café de gros sel"
+    "1 kg de cuisses ou pilons de poulet, sans peau (skinless chicken thighs or drumsticks)",
+    "450 g de cerneaux de noix",
+    "2 gros oignons, émincés",
+    "5 c. à soupe d'huile",
+    "250 ml de mélasse de grenade Cortas (voir Note du chef pour autres marques)",
+    "500 ml d'eau",
+    "0,25 c. à café de pistils de safran, infusés dans 2 c. à soupe d'eau chaude",
+    "0,5 c. à café de cannelle moulue",
+    "2 c. à soupe de sucre, à ajuster",
+    "1 c. à café de gros sel",
+    "Quelques grains de grenade, pour le service"
   ],
   "recipeInstructions": [
-    {"@type": "HowToStep", "text": "Faire griller les noix dans une poêle sèche à feu moyen, 8 min, jusqu'à coloration profonde. Laisser refroidir, puis mixer en pâte grossière."},
-    {"@type": "HowToStep", "text": "Saisir le poulet dans une cocotte avec 2 c. à soupe d'huile, 4 min par face. Réserver."},
-    {"@type": "HowToStep", "text": "Faire suer l'oignon dans la même cocotte, 5 min jusqu'à transparence."},
-    {"@type": "HowToStep", "text": "Ajouter la pâte de noix et 600 ml d'eau. Cuire à feu doux, 30 min, en remuant souvent."},
-    {"@type": "HowToStep", "text": "Remettre le poulet, ajouter la mélasse de grenade et le safran infusé. Mijoter à couvert, 1 h 30, jusqu'à ce que la sauce soit brun foncé et que le poulet se détache."}
+    {"@type": "HowToStep", "text": "Chauffer 3 c. à soupe d'huile dans une cocotte épaisse à feu moyen et faire dorer les oignons 12 min, jusqu'à coloration profonde."},
+    {"@type": "HowToStep", "text": "Pousser les oignons sur le côté, ajouter 2 c. à soupe d'huile et faire dorer le poulet de tous côtés, 6 min."},
+    {"@type": "HowToStep", "text": "Mixer les cerneaux au robot jusqu'à pâte beige fine, en raclant les bords plusieurs fois."},
+    {"@type": "HowToStep", "text": "Verser la pâte de noix et l'eau sur le poulet et les oignons. Ajouter mélasse, safran infusé, cannelle, sucre et sel ; mélanger délicatement."},
+    {"@type": "HowToStep", "text": "Couvrir et mijoter à feu très doux, 2 h, en remuant toutes les 20 min. La sauce devient brun foncé, l'huile remonte à la surface."},
+    {"@type": "HowToStep", "text": "Goûter et ajuster — mélasse si trop sucré, sucre si trop acide. Servir avec riz basmati safrané et grains de grenade."}
   ],
   "notes": [
-    {"title": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Najmieh Batmanglij, *Food of Life*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
-    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (spine) ; Persian-Mama ; Saveur ; Sabrina Ghayour, *Persiana*. Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v16 le 2026-05-05."}
+    {"title": "Note du chef", "text": "Cerneaux frais (jamais pré-moulus, l'huile rancit) mixés au moment. Mijotage long non négociable : la sauce doit virer brun foncé, l'huile remonter. La marque de mélasse change tout — 250 ml ici calé sur Cortas (libanaise) ; pour Rob-e Anar (pâte iranienne épaisse, version Batmanglij authentique), réduire à 130 ml et augmenter l'eau à 700 ml. Préparer la veille améliore. Servir avec un tahdig (croûte de riz dorée)."},
+    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (1986) — spine, canon persan (extrait via Saffron and Lemons blog) ; Sabrina Ghayour, *Persiana* (2014) ; Persian-Mama. Naz Deravian, *Bottom of the Pot* — non intégrée (fetch interrompu). Synthétisée par recipe-forge v17 le 2026-05-06."}
   ]
 }
 ```
