@@ -223,7 +223,7 @@ Before producing the JSON, walk these checks. Fix anything that fails:
 - [ ] **Notes block:** top-level `notes` array (NOT trailing HowToSteps) contains both "Note du chef" and "Sources" entries; Sources includes synthesis date and skill version string.
 - [ ] **Image (if available):** spine source's recipe photo URL captured during fetch; add as `image` field. Skip rather than fabricate or use stock images. **The URL must return HTTP 200 directly — Mealie does not follow redirects on image fetches.** Prefer direct CDN URLs over redirecting og:image URLs.
 - [ ] **Concision pass:** scan each ingredient string for adjectives — would removing the qualifier change the dish? If no, drop it. (`fraîchement moulu`, `frais`, `de qualité`, `vierge extra` for cooking, etc.) Salt: keep `gros sel` and `fleur de sel` — real products, not synonyms.
-- [ ] **Wife-friendly tag:** scan ingredients for porc / fruits de mer / produits laitiers / gluten. If none → auto-tag `Pour ma femme`. If present and adaptation is sensible (forbidden = auxiliary, substitute preserves dish identity) → surface as last DECISION. If forbidden ingredient is structural (carbonara, gratin, lasagne, etc.) → don't suggest, output as-is. **No other dietary tags are emitted.**
+- [ ] **Wife-friendly tag:** scan ingredients for porc / fruits de mer / produits laitiers / gluten. If none → auto-tag `Pour Shelly`. If present and adaptation is sensible (forbidden = auxiliary, substitute preserves dish identity) → surface as last DECISION. If forbidden ingredient is structural (carbonara, gratin, lasagne, etc.) → don't suggest, output as-is. **No other dietary tags are emitted.**
 - [ ] **JSON validity:** valid JSON syntax, starts with `{`.
 
 ### 7. Output — see OUTPUT FORMAT.
@@ -343,7 +343,7 @@ A qualifier earns its place **only if a cook picking the wrong default would pro
 
 ## Wife-friendly tag and adaptation suggestions
 
-The user's wife eats **no porc, no fruits de mer / poisson, no produits laitiers, no gluten**. The skill emits a single tag — `Pour ma femme` — when the recipe naturally fits this constraint. When it does not, the skill may surface a sensible adaptation as a DECISION (NOT auto-apply).
+The user's wife eats **no porc, no fruits de mer / poisson, no produits laitiers, no gluten**. The skill emits a single tag — `Pour Shelly` — when the recipe naturally fits this constraint. When it does not, the skill may surface a sensible adaptation as a DECISION (NOT auto-apply).
 
 This replaces the previous Vegan/Végétarien/Sans gluten/etc. tag system entirely. No other dietary tags are emitted.
 
@@ -358,11 +358,11 @@ This replaces the previous Vegan/Végétarien/Sans gluten/etc. tag system entire
 
 ### Auto-tag rule
 
-If the recipe contains **none** of the above (in any form, including hidden), append `Pour ma femme` to `keywords`. Conservative — when uncertain about a sauce, stock, or processed ingredient, do NOT tag.
+If the recipe contains **none** of the above (in any form, including hidden), append `Pour Shelly` to `keywords`. Conservative — when uncertain about a sauce, stock, or processed ingredient, do NOT tag.
 
 ### Adaptation suggestions — only when sensible
 
-If the recipe contains forbidden ingredients but a substitution preserves the dish, surface an adaptation DECISION. **The user picks whether to include the adapted variant.** If they pick it, apply the substitutions in `recipeIngredient` + `recipeInstructions` and add the `Pour ma femme` tag.
+If the recipe contains forbidden ingredients but a substitution preserves the dish, surface an adaptation DECISION. **The user picks whether to include the adapted variant.** If they pick it, apply the substitutions in `recipeIngredient` + `recipeInstructions` and add the `Pour Shelly` tag.
 
 **Sensible adaptation** (DO suggest) — the forbidden ingredient is auxiliary, a substitute preserves character:
 - Mijoté avec un peu de beurre en finition → remplacer par huile d'olive
@@ -389,12 +389,12 @@ Surface as the LAST decision (after culinary decisions D1, D2, …) :
 [D3] Adaptation femme (sans porc / fruits de mer / lactose / gluten)
   A — Recette telle quelle (pas adaptée pour la femme)
   B — Variante femme : retirer la pancetta, remplacer le beurre par 1 c. à soupe d'huile d'olive supplémentaire
-       → ajoute le tag « Pour ma femme »
+       → ajoute le tag « Pour Shelly »
 ```
 
 If user picks B:
 - Apply substitutions in `recipeIngredient` and `recipeInstructions`
-- Add `Pour ma femme` to `keywords`
+- Add `Pour Shelly` to `keywords`
 - Mention the adaptation in the chef's note: "Version adaptée : sans pancetta, beurre remplacé par huile d'olive."
 
 If user picks A or omits this decision: output the original recipe without the tag.
@@ -510,11 +510,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v19 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v20 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v19`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v20`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -556,7 +556,7 @@ Assuming the user picked `D1=A, D2=A` (Cortas mélasse, with cannelle) for the d
   "totalTime": "PT2H30M",
   "recipeCategory": "Plat principal",
   "recipeCuisine": "Persane",
-  "keywords": "persan, iranien, khoresh, ragoût, noix, grenade, mijoté, plat de fête, Pour ma femme",
+  "keywords": "persan, iranien, khoresh, ragoût, noix, grenade, mijoté, plat de fête, Pour Shelly",
   "url": "https://www.najmieh.com/recipes/",
   "image": "https://persianmama.com/wp-content/uploads/2014/11/fesenjan-last.jpg",
   "tool": ["Cocotte épaisse 4 L", "Robot mixeur"],
@@ -583,7 +583,7 @@ Assuming the user picked `D1=A, D2=A` (Cortas mélasse, with cannelle) for the d
   ],
   "notes": [
     {"title": "Note du chef", "text": "Cerneaux frais (jamais pré-moulus, l'huile rancit) mixés au moment. Mijotage long non négociable : la sauce doit virer brun foncé, l'huile remonter. La marque de mélasse change tout — 250 ml ici calé sur Cortas (libanaise) ; pour Rob-e Anar (pâte iranienne épaisse, version Batmanglij authentique), réduire à 130 ml et augmenter l'eau à 700 ml. Préparer la veille améliore. Servir avec un tahdig (croûte de riz dorée)."},
-    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (1986) — spine, canon persan (extrait via Saffron and Lemons blog) ; Sabrina Ghayour, *Persiana* (2014) ; Persian-Mama. Naz Deravian, *Bottom of the Pot* — non intégrée (fetch interrompu). Synthétisée par recipe-forge v19 le 2026-05-06."}
+    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (1986) — spine, canon persan (extrait via Saffron and Lemons blog) ; Sabrina Ghayour, *Persiana* (2014) ; Persian-Mama. Naz Deravian, *Bottom of the Pot* — non intégrée (fetch interrompu). Synthétisée par recipe-forge v20 le 2026-05-06."}
   ]
 }
 ```
