@@ -18,18 +18,6 @@ The recipe is **always written in French.** English fallbacks are appended in
 parentheses inside ingredient strings only when the French translation is
 ambiguous or imprecise.
 
-## Why JSON-LD, not Mealie's internal schema
-
-Mealie's "Create from JSON" UI hits the `/recipes/create/html-or-json`
-endpoint, which expects **schema.org/Recipe JSON-LD** — the same format
-embedded in recipe websites. Mealie wraps it in HTML and runs it through
-recipe-scrapers + extruct. The endpoint is gated by a check that the
-data starts with `{`; leading whitespace or a markdown code fence
-breaks it (returns `BAD_RECIPE_DATA`).
-
-The internal Pydantic schema (`/recipes` POST) is for authenticated API,
-not the UI form, and is NOT what we output here.
-
 ## Invocation
 
 ```
@@ -393,15 +381,23 @@ When a republication was used, show the original URL → actual URL with an arro
 
 ### Section 2 — DECISIONS
 
+Present each significant disagreement as options for the user to pick from. **Do NOT auto-apply your own recommendation.** Stop after Sections 1 and 2 and explicitly ask the user which option they want for each decision before producing the JSON.
+
 ```
 [D1] Traitement des noix
   Option A — Ottolenghi : faire griller à sec dans une poêle, 8 min
+    → saveur plus nette, moins gras, plus léger
   Option B — Persian-Mama : mixer puis frire dans l'huile jusqu'à brun-roux
-  Recommandation : A (saveur plus nette ; moins gras)
-  Compromis : A est plus léger ; B a une profondeur grillée plus marquée
+    → profondeur grillée plus marquée, plus riche
 ```
 
-If no significant disagreements: `Pas de désaccord notable entre les sources — synthèse basée sur [source spine].`
+Then ask the user:
+
+> Quelles options choisis-tu (D1, D2, …) ? Réponds par lettre (`D1=A, D2=B, …`) ou « défaut » pour suivre la première option de chaque décision.
+
+Wait for the user's response before producing Section 3.
+
+If there are no significant disagreements: `Pas de désaccord notable entre les sources — synthèse basée sur [source spine].` and proceed directly to Section 3.
 
 ### Section 3 — schema.org Recipe JSON-LD
 
@@ -452,11 +448,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v15 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v16 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v15`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v16`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -518,23 +514,10 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
   ],
   "notes": [
     {"title": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Najmieh Batmanglij, *Food of Life*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
-    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (spine) ; Persian-Mama ; Saveur ; Sabrina Ghayour, *Persiana*. Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v15 le 2026-05-05."}
+    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (spine) ; Persian-Mama ; Saveur ; Sabrina Ghayour, *Persiana*. Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v16 le 2026-05-05."}
   ]
 }
 ```
-
-## After output
-
-End the response with this exact paste warning (mandatory):
-
-> **Coller** dans Mealie → Recipes → Create Recipe → Create from JSON.
->
-> ⚠️ **Le tout premier caractère collé doit être `{`** — pas d'espace, pas de saut
-> de ligne, pas de fence \`\`\`json. Utiliser le bouton « copier » du bloc de
-> code ci-dessus, ou enregistrer dans un fichier (`pbpaste`/`xclip`/`wl-copy`)
-> et coller depuis là. Sinon Mealie répond `BAD_RECIPE_DATA`.
-
-No further commentary unless the user asks a follow-up.
 
 ## Special cases
 
