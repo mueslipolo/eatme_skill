@@ -1,6 +1,6 @@
 ---
 name: recipe-forge
-description: Synthesises a canonical recipe in French from multiple trusted sources and outputs schema.org/Recipe JSON-LD ready to paste into Mealie's "Create Recipe → Create from JSON" form. Use when the user asks to forge, build, import, normalise, or synthesise a recipe — or provides a recipe URL, YouTube link, or just a dish name like "fesenjān". Output is in French (the language of cooking); English fallback terms are kept in parentheses inside ingredient strings when translation is ambiguous (meat cuts, specific flour types, US-specific ingredients without a clean French equivalent). Quantities are metric-first; servings come from the source (typically 4–6). For technical bakes (cakes, cookies, breads, pastry, soufflés, custards) the skill operates in single-source mode and never synthesises ratios across recipes.
+description: Synthesises a canonical recipe in French from trusted sources and outputs Mealie-importable schema.org/Recipe JSON-LD. Use when the user asks to forge, build, import, or synthesise a recipe — or provides a URL, YouTube link, or dish name like "fesenjān". Auto-tags "Pour Shelly" for diet-compatible recipes (no porc / fruits de mer / produits laitiers / gluten). Technical bakes (cakes, cookies, breads, pastry, soufflés, custards) use single-source mode.
 ---
 
 # Recipe Forge
@@ -38,138 +38,36 @@ No other arguments.
 
 ### 1. Source discovery
 
-**First check: is this a technical bake?** If yes (cakes, cookies, breads, pastry, soufflés, custards — see CRITICAL RULES rule 10), shift to single-source mode: present 2–3 candidate authoritative sources with each one's profile and ask the user to pick the spine. Do NOT cross-reference for synthesis.
+If technical bake (see CRITICAL RULE 10) → single-source mode (present candidates, user picks spine). Otherwise: **web_search** for 3–5 reputable versions, including a canonical-cookbook reference when one applies (see below).
 
-For everything else (gratins, mijotés, ragoûts, etc.), use **web_search** to find 3–5 reputable versions. Always include at least one **canonical-cookbook reference** for the cuisine (see Reference cookbooks below) when one applies — printed canon usually beats blog content for classic preparations.
-
-**Web prioritisation:**
-
-- Famous chefs (online presence): Ottolenghi, Hazan, Roden, David, Pépin, Robuchon, Bocuse, Ducasse, Bras, Liguori, Mallmann, Acurio, Locatelli, Slater, Hopkinson
-- Authoritative sites: NYT Cooking, Serious Eats, BBC Good Food, Saveur, Bon Appétit Test Kitchen, Académie du Goût
-- French-language: La Cuisine de Bernard, Marmiton, Cuisine Actuelle, Chef Simon, 750g, Papilles et Pupilles
-- Regional authority sites: Persian-Mama (Iranian), Maangchi (Korean), Just One Cookbook (Japanese), Vincenzo's Plate (Italian)
-
-**Avoid** SEO-bloat blogs, Pinterest-style sites, generic content farms.
+**Web prioritisation:** famous chefs (Ottolenghi, Hazan, Roden, Pépin, Bocuse, Ducasse, Slater, Kenji); authoritative sites (NYT Cooking, Serious Eats, Saveur, Bon Appétit, Académie du Goût); French (Marmiton, Chef Simon, La Cuisine de Bernard, 750g, Papilles et Pupilles); regional (Persian-Mama, Maangchi, Just One Cookbook, Vincenzo's Plate). **Avoid** SEO-bloat blogs and content farms.
 
 #### Reference cookbooks (canonical authorities by cuisine)
 
-For any dish in these traditions, search for the relevant cookbook's version of the recipe (often republished on Reddit, in book reviews, or excerpted on the publisher's site). Cite as "<Author>, *<Title>* (<year>)" in the SOURCES table.
+Search for the recipe republished/excerpted (Reddit, blogs, book reviews). Cite as `<Author>, *<Title>* (<year>)` and mark SOURCES status `fetched (book excerpt via <site>)`. Treat as spine when canonical for the cuisine. **See CRITICAL RULE 11 — never cite from memory; verify via fetch.**
 
-**French**
-- Auguste Escoffier, *Le Guide Culinaire* (1903) — bedrock of French haute cuisine
-- *Larousse Gastronomique* (Joël Robuchon, ed.) — encyclopedic reference
-- Julia Child, *Mastering the Art of French Cooking* (1961) — French technique exposition
-- Jacques Pépin, *La Technique* / *La Méthode* — fundamentals
-- Paul Bocuse, *La Cuisine du Marché* — bourgeois canon
-- Anne Willan, *La Varenne Pratique*
-- Michel Bras, *Essential Cuisine*
-- Dorie Greenspan, *My Paris Kitchen* — modern American-French
-
-**Italian**
-- Marcella Hazan, *Essentials of Classic Italian Cooking* — gold standard for non-Italians
-- Pellegrino Artusi, *La Scienza in Cucina* (1891) — historical foundation
-- *Il Cucchiaio d'Argento* (*The Silver Spoon*) — Italian household reference
-- Lidia Bastianich, *Lidia's Italy* / *Lidia's Mastering the Art of Italian Cuisine*
-- Giorgio Locatelli, *Made in Italy*
-- Anna Del Conte, *Gastronomy of Italy*
-- Antonio Carluccio, *Italia*
-
-**Middle Eastern / Mediterranean**
-- Claudia Roden, *A Book of Middle Eastern Food* / *The Book of Jewish Food* — definitive for the region
-- Yotam Ottolenghi, *Jerusalem* / *Plenty* / *Simple* — modern levantine
-- Sami Tamimi, *Falastin* — Palestinian
-- Paula Wolfert, *The Food of Morocco* / *Mediterranean Clay Pot Cooking*
-- Greg Malouf, *Saraban*
-
-**Persian / Iranian** (subset of Middle Eastern; deep enough to merit its own list)
-- Najmieh Batmanglij, *Food of Life* (1986) — the Persian bible; ceremonies, technique, regional depth
-- Sabrina Ghayour, *Persiana* (2014) / *Sirocco* / *Bazaar* / *Feasts* — modern, accessible, deeply Persian-influenced; Observer Food Monthly Best New Cookbook 2014
-- Naz Deravian, *Bottom of the Pot* (2018) — modern Iranian-American, rich in family context
-- Margaret Shaida, *The Legendary Cuisine of Persia* (1992) — historical / classical reference
-
-**British**
-- Jane Grigson, *English Food*
-- Nigel Slater, *Tender* / *The Kitchen Diaries*
-- Hugh Fearnley-Whittingstall, *River Cottage Cookbook*
-- Delia Smith, *How to Cook* — fundamentals reference
-- Heston Blumenthal, *In Search of Perfection* — technique deep-dives
-
-**American**
-- James Beard, *American Cookery*
-- Thomas Keller, *The French Laundry Cookbook* / *Bouchon* / *Ad Hoc at Home*
-- Alice Waters, *The Art of Simple Food* / *Chez Panisse Vegetables*
-- J. Kenji López-Alt, *The Food Lab* — technique-driven, science-backed
-- Samin Nosrat, *Salt Fat Acid Heat*
-
-**Chinese / East Asian**
-- Fuchsia Dunlop, *Land of Plenty* (Sichuanese) / *Every Grain of Rice* (everyday Chinese) — definitive Western-language Chinese
-- David Thompson, *Thai Food* — Thai reference
-- Andrea Nguyen, *Vietnamese Food Any Day* / *Asian Dumplings*
-- Maangchi, *Maangchi's Real Korean Cooking*
-- Nami Hirasawa Chen (*Just One Cookbook*) — Japanese home cooking
-
-**Indian / South Asian**
-- Madhur Jaffrey, *An Invitation to Indian Cooking* (1973) / *Madhur Jaffrey's Indian Cookery* (1982) — definitive English-language Indian canon
-- Pushpesh Pant, *India: The Cookbook* (Phaidon, 1000+ recipes) — encyclopedic regional reference
-- Camellia Panjabi, *50 Great Curries of India* — masala-system foundations
-- Vivek Singh, *The Cinnamon Club Cookbook* — modern Indian (London)
-- Meera Sodha, *Made in India* / *East* — Gujarati home cooking, vegetable-forward
-- Asma Khan, *Asma's Indian Kitchen* — Bengali / Hyderabadi
-- Niloufer Ichaporia King, *My Bombay Kitchen* — Parsi
-- Yamuna Devi, *Lord Krishna's Cuisine* — vegetarian deep reference
-
-**Mexican**
-- Diana Kennedy, *The Cuisines of Mexico* (1972) / *Oaxaca al Gusto* / *The Essential Cuisines of Mexico* — gold standard, pre-fusion authentic
-- Rick Bayless, *Authentic Mexican* / *Mexico One Plate at a Time* — most-respected Anglo Mexican reference
-- Patricia Quintana, *Mulli: El Libro de los Moles* — definitive on moles
-- Margarita Carrillo Arronte, *Mexico: The Cookbook* (Phaidon) — encyclopedic regional
-- Pati Jinich, *Pati's Mexican Table* / *Mexican Today* — accessible home cooking
-- Enrique Olvera, *Mexico from the Inside Out* — modern haute Mexican (Pujol)
-- Zarela Martinez, *The Food and Life of Oaxaca* — Oaxacan
-- Gabriela Cámara, *My Mexico City Kitchen* — Contramar / coastal Mexican
-
-**Spanish / Latin American (autres)**
-- Penelope Casas, *The Foods and Wines of Spain* — Spanish reference
-- Gastón Acurio, *Peru: The Cookbook* — Peruvian canon
-
-**Swiss**
-- Marianne Kaltenbach, *Aus Schweizer Küchen* (DE) / *Tout simplement Suisse* (FR) — household canon, all three linguistic regions
-- Sue Style, *A Taste of Switzerland* — English-language Swiss reference; strong on regional context
-- Andreas Caminada, *Pure Leidenschaft* / *Pure Cuisine* — modern high-Swiss cuisine (Schauenstein)
-- *Tiptopf* (Schweizerischer Hauswirtschaftlicher Fachverband) — the cookbook every Swiss-German student learns from; ubiquitous baseline
-- Annemarie Wildeisen, *Wildeisens Kochen* — popular Swiss-German home cooking
-- Hiltl Restaurant, *Hiltl: The Cookbook* — Zürich, oldest vegetarian restaurant in the world
-- Anton Mosimann, *World Cuisine* — Swiss chef working internationally; technique-focused
-- For Romandie / Italian-Swiss specifics: French and Italian canons (Bocuse, Hazan) often apply directly; Swiss regional dishes (papet vaudois, capuns, bündner gerstensuppe) are best found via local sites (Swissmilk, Schweizer Bauern, Tibits)
-
-**Reference / technique (cuisine-agnostic)**
-- Harold McGee, *On Food and Cooking* — the food-science bible
-- Nathan Myhrvold et al., *Modernist Cuisine* — modernist technique
-- *Larousse Gastronomique* (already listed under French; serves cross-cuisine reference too)
-
-**How to cite a cookbook source**
-
-Cookbooks usually aren't web-fetchable directly. Search for the recipe republished or excerpted:
-
-```
-search: "Marcella Hazan Bolognese sauce essentials" → likely a Reddit thread or food blog quoting verbatim
-search: "Roden fesenjan Middle Eastern Food recipe" → blog or cookbook review excerpting the recipe
-```
-
-Mark in SOURCES table as `fetched (book excerpt via <site>)` with both the book reference and the URL where the excerpt was found. Treat the cookbook as the spine when its version is canonical for the cuisine.
+| Cuisine | Authorities (most-cited) |
+|---|---|
+| French | *Larousse Gastronomique* (Robuchon ed.) ; Bocuse, *La Cuisine du Marché* ; Pépin, *La Technique* / *La Méthode* ; Hermé (pâtisserie) |
+| Italian | Hazan, *Essentials of Classic Italian Cooking* ; Artusi, *La Scienza in Cucina* (1891) ; Bastianich, *Lidia's Italy* |
+| **Ottolenghi (★ favori Yves — vérifier en priorité pour tout plat méditerranéen, levantin, végétal, ou fusion moderne)** | *Jerusalem* (avec Tamimi, 2012) ; *Plenty* (2010) / *Plenty More* ; *Simple* (2018) ; *Flavour* (2020) ; *Comfort* (2024) ; *NOPI* ; *Ottolenghi: The Cookbook* ; *Sweet* (pâtisserie) |
+| Moyen-Orient (autres) | Roden, *A Book of Middle Eastern Food* ; Tamimi, *Falastin* ; Wolfert, *The Food of Morocco* |
+| Persan / Iranien | Batmanglij, *Food of Life* (1986) — the Persian bible ; Ghayour, *Persiana* (2014) |
+| Britannique | Slater, *Tender* / *The Kitchen Diaries* ; Heston, *In Search of Perfection* (technique) |
+| Américain | Keller, *Bouchon* / *Ad Hoc at Home* ; Kenji, *The Food Lab* ; Nosrat, *Salt Fat Acid Heat* |
+| Chinois / Asie de l'Est | Dunlop, *Every Grain of Rice* / *Land of Plenty* ; Maangchi, *Real Korean Cooking* ; *Just One Cookbook* (Nami Chen, Japonais) |
+| Indien | Jaffrey, *An Invitation to Indian Cooking* / *Indian Cookery* ; Sodha, *Made in India* / *East* |
+| Mexicain | Diana Kennedy, *The Cuisines of Mexico* / *Oaxaca al Gusto* ; Bayless, *Authentic Mexican* |
+| Espagnol / Latino | Acurio, *Peru: The Cookbook* ; Casas, *The Foods and Wines of Spain* |
+| Suisse | Kaltenbach, *Tout simplement Suisse* / *Aus Schweizer Küchen* ; Caminada, *Pure Cuisine* ; (Romandie ⇒ canon français Bocuse/Larousse) |
+| Référence technique | McGee, *On Food and Cooking* (food science) |
 
 ### 2. Source fetch
 Use **web_fetch** on each source. If a fetch fails (paywall, anti-bot, JS-heavy), **don't give up immediately** — try the republication fallback first.
 
-**Capture image URL while fetching.** When web_fetching a source, also extract any recipe photo URL — look for `og:image` meta tag, schema.org/Recipe `image` field in embedded JSON-LD, or the most prominent recipe image in the article. Note the URL alongside the recipe content. Use the spine source's image as primary; fall back to other sources only if the spine has no usable image. Skip the `image` field entirely if no source has a usable photo. Never use stock images or invent URLs.
+**Capture image URL while fetching.** Extract from `og:image`, JSON-LD `image`, or the in-article `<img src=...>` tag. Prefer spine source's photo; fall back to other sources or skip the `image` field — never invent or use stock images.
 
-**Image URL gotcha — must return HTTP 200 directly, no redirect.** Mealie's image downloader (`mealie/services/recipe/recipe_data_service.py::scrape_image()`) uses `AsyncClient(transport=safehttp.AsyncSafeTransport)` without `follow_redirects=True`. So an image URL that returns 301/302 (Squarespace's `static1.squarespace.com/...?format=1500w` is the canonical example) **fails silently** — `r.status_code != 200` returns None and the recipe gets imported with no photo.
-
-When choosing an image URL:
-- **Test it.** A URL that returns 301/302 in `curl -sI <url>` will not work.
-- **Prefer direct CDN URLs.** Squarespace's CDN (`images.squarespace-cdn.com/content/v1/.../slug`) typically returns 200 directly; the `static1.squarespace.com/...?format=N` form 301-redirects there.
-- **For sites like Squarespace, look at the actual `<img src=...>` tag in the article body**, not just the og:image meta — the inline image is usually the post-redirect URL.
-- If the spine source's image only resolves via redirect, follow the redirect manually and use the final URL — or skip the `image` field rather than ship a broken one.
+**The URL must return HTTP 200 directly.** Mealie's image downloader does NOT follow redirects. An og:image that 301-redirects (typical Squarespace pattern: `static1.squarespace.com/...?format=N` → `images.squarespace-cdn.com/...`) silently produces no image. **Use the post-redirect URL** (often the in-article `<img>` src) or skip the field.
 
 #### Republication fallback (try before marking `unfetched`)
 
@@ -214,17 +112,13 @@ Note where sources differ on:
 
 ### 6. Self-check (mandatory before output)
 
-Before producing the JSON, walk these checks. Fix anything that fails:
+Walk these five checks. Fix anything that fails:
 
-- [ ] **Ingredient → instructions:** every entry in `recipeIngredient` is referenced in at least one step. (Read each ingredient; locate its use.)
-- [ ] **Instructions → ingredient:** every named ingredient inside a step exists in `recipeIngredient` with a quantity. (Scan steps for "ajouter X", "verser Y" — confirm X and Y are in the list.)
-- [ ] **Time math:** `totalTime` = `prepTime` + `cookTime` (ISO-8601 arithmetic, not approximation). Rest/marinate/rise time folds into `cookTime`.
-- [ ] **Yield:** `recipeYield` matches the spine source's yield (or 4–6 default).
-- [ ] **Notes block:** top-level `notes` array (NOT trailing HowToSteps) contains both "Note du chef" and "Sources" entries; Sources includes synthesis date and skill version string.
-- [ ] **Image (if available):** spine source's recipe photo URL captured during fetch; add as `image` field. Skip rather than fabricate or use stock images. **The URL must return HTTP 200 directly — Mealie does not follow redirects on image fetches.** Prefer direct CDN URLs over redirecting og:image URLs.
-- [ ] **Concision pass:** scan each ingredient string for adjectives — would removing the qualifier change the dish? If no, drop it. (`fraîchement moulu`, `frais`, `de qualité`, `vierge extra` for cooking, etc.) Salt: keep `gros sel` and `fleur de sel` — real products, not synonyms.
-- [ ] **Wife-friendly tag:** scan ingredients for porc / fruits de mer / produits laitiers / gluten. If none → auto-tag `Pour Shelly`. If present and adaptation is sensible (forbidden = auxiliary, substitute preserves dish identity) → surface as last DECISION. If forbidden ingredient is structural (carbonara, gratin, lasagne, etc.) → don't suggest, output as-is. **No other dietary tags are emitted.**
-- [ ] **JSON validity:** valid JSON syntax, starts with `{`.
+- [ ] **Parity (both directions):** every `recipeIngredient` entry is used in a step ; every named ingredient in a step is listed.
+- [ ] **Time math:** `totalTime` = `prepTime` + `cookTime` exactly (rest/passive folds into `cookTime`).
+- [ ] **Notes block:** top-level `notes` array — NOT trailing HowToSteps. Includes "Note du chef" and "Sources" (with synthesis date + skill version).
+- [ ] **Image:** if present, URL returns 200 directly (no redirect). Otherwise omit.
+- [ ] **Pour Shelly tag:** auto-add if no porc/fruits de mer/produits laitiers/gluten. Surface adaptation as LAST decision only if the substitute preserves the dish.
 
 ### 7. Output — see OUTPUT FORMAT.
 
@@ -251,24 +145,15 @@ Before producing the JSON, walk these checks. Fix anything that fails:
 
 9. **Time consistency.** `totalTime` = `prepTime` + `cookTime`, exactly — verify the ISO-8601 math before output. Rest / marinate / rise / passive time goes into `cookTime` (it's passive cooking). Never let `totalTime` be an approximation; compute it.
 
-10. **Technical bakes are single-source. NEVER synthesise across multiple recipes for these.** The ratios are too tightly coupled (gluten:fat, sugar:fat, hydration, leaven balance) — averaging produces failures.
+10. **Technical bakes are single-source.** Ratios (gluten:fat, sugar:fat, hydration, leavening) are too tightly coupled to mix across recipes.
 
-   **Technical bakes (single-source mode):**
-   - Gâteaux, cookies, biscuits, brownies (structure dépend de ratios fat/sugar/flour précis)
-   - Pains (à levure ou levain — l'hydratation est critique)
-   - Pâtisserie : pâte feuilletée, sablée, brisée, à choux, croissants
-   - Soufflés (sucrés ou salés — la technique du blanc battu EST le plat)
-   - Crèmes prises : crème brûlée, flan, panna cotta, crème caramel, pots de crème
-   - Meringues, macarons
-   - Chocolat tempéré, ganache, crémeux
+   **Single-source (don't synthesise):** gâteaux, cookies, brownies, pains, pâte feuilletée/sablée/brisée/choux, croissants, soufflés (sucrés ou salés), crèmes prises (brûlée, panna cotta, flan, pots de crème), meringues, macarons, chocolat tempéré.
 
-   **Synthèse OK (PAS techniques) :**
-   - Gratins (dauphinois, pâtes, légumes), lasagnes, casseroles
-   - Braisés finis au four, rôtis
-   - Mijotés (carbonnade, agneau de 7 h, ragoûts, currys)
-   - Pizza standard (sauf spec Neapolitana AVPN — alors single-source)
+   **Synthesis OK:** gratins, lasagnes, mijotés (carbonnade, agneau 7h, ragoûts), braisés au four, rôtis, pizza standard. Pizza Napolitaine AVPN = single-source.
 
-   **Single-source flow for bakes:** present 2–3 candidate sources with each one's profile (e.g., "Felder : classique français rigoureux" vs "Stella Parks, *BraveTart* : américaine perfectionnée scientifique" vs "Hermé : pâtisserie haute exigence"). Ask the user which to use as spine. After the user picks, operate in single-source mode — faithful translation, no merging across sources. The DECISIONS section in single-source mode contains only variants the chosen source itself offers (e.g., chocolate vs vanilla version), not technique decisions.
+   **Flow:** present 2–3 candidate sources with profile (e.g., "Felder : classique rigoureux" vs "Stella Parks, *BraveTart* : scientifique" vs "Hermé : haute exigence"). User picks. Faithful translation only ; DECISIONS section lists only variants the source itself offers (chocolate vs vanilla, etc.), not technique choices.
+
+11. **Cookbook citations must be verified.** NEVER cite a cookbook by name from training-data memory. A cookbook citation in SOURCES requires a fetched source — book excerpt blog, publisher's page, faithful Reddit republication — that explicitly attributes the recipe to that book. If you can't verify the recipe is in the named book, cite the actual fetched URL only and don't claim cookbook attribution. *(Past failure: fabricated "Ottolenghi *Jerusalem*" for fesenjān — that recipe is not in Jerusalem.)*
 
 ## French language conventions
 
@@ -433,9 +318,9 @@ When a republication was used, show the original URL → actual URL with an arro
 
 ### Section 2 — DECISIONS
 
-Present each significant disagreement as options for the user to pick from. **Do NOT auto-apply your own recommendation.** Stop after Sections 1 and 2 and explicitly ask the user which option they want for each decision before producing the JSON.
+Present each significant disagreement as options. **Do NOT auto-apply or recommend** — the user knows what's best. Each option states its source/authority and the cooking profile produced. Cap at 3 decisions ; surface only choices that meaningfully change the dish. `défaut` follows the spine source's option.
 
-**Present options with their source/authority — DO NOT pre-rank or recommend.** The user knows what's best. Each option states its source (cookbook, chef, regional tradition) and the cooking profile it produces; the user picks on merit. Cap at 3 decisions max — surface only choices that meaningfully change the dish, not micro-style preferences. `défaut` follows the spine source's choice (the option labelled with the spine in each decision).
+⛔ **HARD STOP after Section 2.** Do NOT produce Section 3 in the same turn. If you've started writing JSON without the user's response, you've broken this rule — stop and wait.
 
 ```
 [D1] Forme de mélasse de grenade
@@ -451,15 +336,13 @@ Present each significant disagreement as options for the user to pick from. **Do
        goût plus pur de noix et grenade
 ```
 
-**Note for bakes (single-source mode):** the SOURCES table has a single row, and the DECISIONS section either lists no decisions (`Recette suivie à la lettre depuis [source]`) or only the variants the source itself proposes (e.g., chocolate vs vanilla).
+**For bakes (single-source mode):** SOURCES has one row ; DECISIONS lists no decisions (`Recette suivie à la lettre depuis [source].`) or only variants the source itself proposes.
 
-Then ask the user:
+End Section 2 with this exact prompt:
 
-> Quelles options choisis-tu (D1, D2, …) ? Réponds par lettre (`D1=A, D2=B, …`) ou « défaut » pour suivre l'option du spine source.
+> **STOP.** Quelles options ? (`D1=A, D2=B, …` ou `défaut`)
 
-Wait for the user's response before producing Section 3.
-
-If there are no significant disagreements: `Pas de désaccord notable entre les sources — synthèse basée sur [source spine].` and proceed directly to Section 3.
+If no significant disagreements: `Pas de désaccord notable — synthèse basée sur [spine].` and proceed directly to Section 3 in the same turn (no waiting needed since there's nothing to ask).
 
 ### Section 3 — schema.org Recipe JSON-LD
 
@@ -510,11 +393,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v20 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v21 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v20`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v21`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -583,14 +466,24 @@ Assuming the user picked `D1=A, D2=A` (Cortas mélasse, with cannelle) for the d
   ],
   "notes": [
     {"title": "Note du chef", "text": "Cerneaux frais (jamais pré-moulus, l'huile rancit) mixés au moment. Mijotage long non négociable : la sauce doit virer brun foncé, l'huile remonter. La marque de mélasse change tout — 250 ml ici calé sur Cortas (libanaise) ; pour Rob-e Anar (pâte iranienne épaisse, version Batmanglij authentique), réduire à 130 ml et augmenter l'eau à 700 ml. Préparer la veille améliore. Servir avec un tahdig (croûte de riz dorée)."},
-    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (1986) — spine, canon persan (extrait via Saffron and Lemons blog) ; Sabrina Ghayour, *Persiana* (2014) ; Persian-Mama. Naz Deravian, *Bottom of the Pot* — non intégrée (fetch interrompu). Synthétisée par recipe-forge v20 le 2026-05-06."}
+    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (1986) — spine, canon persan (extrait via Saffron and Lemons blog) ; Sabrina Ghayour, *Persiana* (2014) ; Persian-Mama. Naz Deravian, *Bottom of the Pot* — non intégrée (fetch interrompu). Synthétisée par recipe-forge v21 le 2026-05-06."}
   ]
 }
 ```
 
 ## Special cases
 
-- **User provides a single URL only**: still try to find 1–2 alternates via web_search to enable cross-referencing. If alternates can't be found, proceed with one source and note in the chef's HowToStep that this recipe was not cross-referenced.
-- **All sources unfetchable**: stop and tell the user. Do not fabricate a recipe from training data alone — that defeats the entire point of the skill.
-- **Source is in English only**: translate to French. The French recipe is the contract. Keep ambiguous technical terms (meat cuts especially) in parens.
-- **Source is in French already**: use directly; only translate if the source uses unusual regional vocabulary.
+- **Single URL provided**: try 1–2 alternates for cross-referencing ; if none found, proceed and note in chef's note.
+- **User says "keep original" / "no synthesis"**: single-source mode regardless of dish type. Faithful translation only ; DECISIONS section either empty or only listing source-internal variants. Same applies for Pamela-Salzman-style imports where user wants the recipe verbatim.
+- **All sources unfetchable**: stop and tell the user. Don't fabricate from memory.
+- **English-only source**: translate to French ; keep ambiguous technical terms (cuts especially) in parens.
+- **French source**: use directly.
+
+## What this skill does NOT do
+
+- Post to Mealie's API. Output is paste-into-UI only.
+- Modify or reconcile with existing Mealie recipes — every invocation is fresh.
+- Track standing user preferences across invocations — defaults are re-asked each time.
+- Plan meals or generate shopping lists.
+- Substitute ingredients beyond the explicit Pour-Shelly adaptation flow.
+- Fabricate cookbook citations (see CRITICAL RULE 11).
