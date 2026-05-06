@@ -1,6 +1,6 @@
 ---
 name: recipe-forge
-description: Synthesises a canonical recipe in French from multiple trusted sources and outputs schema.org/Recipe JSON-LD ready to paste into Mealie's "Create Recipe → Create from JSON" form. Use when the user asks to forge, build, import, normalise, or synthesise a recipe — or provides a recipe URL, YouTube link, or just a dish name like "fesenjān". Output is in French (the language of cooking); English fallback terms are kept in parentheses inside ingredient strings when translation is ambiguous (meat cuts, specific flour types, US-specific ingredients without a clean French equivalent). Quantities are metric-first; servings come from the source (typically 4–6).
+description: Synthesises a canonical recipe in French from multiple trusted sources and outputs schema.org/Recipe JSON-LD ready to paste into Mealie's "Create Recipe → Create from JSON" form. Use when the user asks to forge, build, import, normalise, or synthesise a recipe — or provides a recipe URL, YouTube link, or just a dish name like "fesenjān". Output is in French (the language of cooking); English fallback terms are kept in parentheses inside ingredient strings when translation is ambiguous (meat cuts, specific flour types, US-specific ingredients without a clean French equivalent). Quantities are metric-first; servings come from the source (typically 4–6). For technical bakes (cakes, cookies, breads, pastry, soufflés, custards) the skill operates in single-source mode and never synthesises ratios across recipes.
 ---
 
 # Recipe Forge
@@ -409,21 +409,23 @@ Present each significant disagreement as options for the user to pick from. **Do
 
 ```
 [D1] Forme de mélasse de grenade
-  Option A — Cortas (libanaise, accessible Europe) : 250 ml + 500 ml d'eau
-    → aigre-doux modéré, équilibre standard, le plus accessible en Suisse/France
-  Option B — Rob-e Anar (pâte iranienne épaisse, version Batmanglij authentique) : 130 ml + 700 ml d'eau
-    → tradition persane, plus aigre, couleur plus foncée
+  A — Cortas (libanaise, accessible Suisse/France) : 250 ml + 500 ml d'eau
+       aigre-doux modéré, équilibre standard
+  B — Rob-e Anar (pâte iranienne épaisse, version Batmanglij = spine) : 130 ml + 700 ml d'eau
+       tradition persane authentique, plus aigre, couleur plus foncée
 
 [D2] Cannelle
-  Option A — Batmanglij : 0,5 c. à café de cannelle moulue
-    → accent rond, classique persan
-  Option B — Ghayour, Persian-Mama : aucune
-    → goût plus pur de noix et grenade
+  A — Batmanglij (spine), Persian-Mama : 0,5 c. à café de cannelle moulue
+       accent rond, classique persan
+  B — Ghayour : aucune
+       goût plus pur de noix et grenade
 ```
+
+**Note for bakes (single-source mode):** the SOURCES table has a single row, and the DECISIONS section either lists no decisions (`Recette suivie à la lettre depuis [source]`) or only the variants the source itself proposes (e.g., chocolate vs vanilla).
 
 Then ask the user:
 
-> Quelles options choisis-tu (D1, D2, …) ? Réponds par lettre (`D1=A, D2=B, …`) ou « défaut » pour suivre l'option A de chaque décision.
+> Quelles options choisis-tu (D1, D2, …) ? Réponds par lettre (`D1=A, D2=B, …`) ou « défaut » pour suivre l'option du spine source.
 
 Wait for the user's response before producing Section 3.
 
