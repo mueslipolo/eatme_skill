@@ -37,7 +37,10 @@ No other arguments.
 ## Process (in order)
 
 ### 1. Source discovery
-If only a dish name was given, use **web_search** to find 3–5 reputable versions. Always include at least one **canonical-cookbook reference** for the cuisine (see Reference cookbooks below) when one applies — printed canon usually beats blog content for classic preparations.
+
+**First check: is this a technical bake?** If yes (cakes, cookies, breads, pastry, soufflés, custards — see CRITICAL RULES rule 10), shift to single-source mode: present 2–3 candidate authoritative sources with each one's profile and ask the user to pick the spine. Do NOT cross-reference for synthesis.
+
+For everything else (gratins, mijotés, ragoûts, etc.), use **web_search** to find 3–5 reputable versions. Always include at least one **canonical-cookbook reference** for the cuisine (see Reference cookbooks below) when one applies — printed canon usually beats blog content for classic preparations.
 
 **Web prioritisation:**
 
@@ -248,6 +251,25 @@ Before producing the JSON, walk these checks. Fix anything that fails:
 
 9. **Time consistency.** `totalTime` = `prepTime` + `cookTime`, exactly — verify the ISO-8601 math before output. Rest / marinate / rise / passive time goes into `cookTime` (it's passive cooking). Never let `totalTime` be an approximation; compute it.
 
+10. **Technical bakes are single-source. NEVER synthesise across multiple recipes for these.** The ratios are too tightly coupled (gluten:fat, sugar:fat, hydration, leaven balance) — averaging produces failures.
+
+   **Technical bakes (single-source mode):**
+   - Gâteaux, cookies, biscuits, brownies (structure dépend de ratios fat/sugar/flour précis)
+   - Pains (à levure ou levain — l'hydratation est critique)
+   - Pâtisserie : pâte feuilletée, sablée, brisée, à choux, croissants
+   - Soufflés (sucrés ou salés — la technique du blanc battu EST le plat)
+   - Crèmes prises : crème brûlée, flan, panna cotta, crème caramel, pots de crème
+   - Meringues, macarons
+   - Chocolat tempéré, ganache, crémeux
+
+   **Synthèse OK (PAS techniques) :**
+   - Gratins (dauphinois, pâtes, légumes), lasagnes, casseroles
+   - Braisés finis au four, rôtis
+   - Mijotés (carbonnade, agneau de 7 h, ragoûts, currys)
+   - Pizza standard (sauf spec Neapolitana AVPN — alors single-source)
+
+   **Single-source flow for bakes:** present 2–3 candidate sources with each one's profile (e.g., "Felder : classique français rigoureux" vs "Stella Parks, *BraveTart* : américaine perfectionnée scientifique" vs "Hermé : pâtisserie haute exigence"). Ask the user which to use as spine. After the user picks, operate in single-source mode — faithful translation, no merging across sources. The DECISIONS section in single-source mode contains only variants the chosen source itself offers (e.g., chocolate vs vanilla version), not technique decisions.
+
 ## French language conventions
 
 ### Units
@@ -383,7 +405,7 @@ When a republication was used, show the original URL → actual URL with an arro
 
 Present each significant disagreement as options for the user to pick from. **Do NOT auto-apply your own recommendation.** Stop after Sections 1 and 2 and explicitly ask the user which option they want for each decision before producing the JSON.
 
-**Each decision lists Option A as the objectively-most-authoritative choice (cookbook canon when one applies, or cross-source consensus), then alternatives that fit the user's preferences.** Cap at 3 decisions max — surface only those where the choice meaningfully changes the dish, not micro-style preferences.
+**Present options with their source/authority — DO NOT pre-rank or recommend.** The user knows what's best. Each option states its source (cookbook, chef, regional tradition) and the cooking profile it produces; the user picks on merit. Cap at 3 decisions max — surface only choices that meaningfully change the dish, not micro-style preferences. `défaut` follows the spine source's choice (the option labelled with the spine in each decision).
 
 ```
 [D1] Forme de mélasse de grenade
@@ -456,11 +478,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v17 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v18 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v17`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v18`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -529,7 +551,7 @@ Assuming the user picked `D1=A, D2=A` (Cortas mélasse, with cannelle) for the d
   ],
   "notes": [
     {"title": "Note du chef", "text": "Cerneaux frais (jamais pré-moulus, l'huile rancit) mixés au moment. Mijotage long non négociable : la sauce doit virer brun foncé, l'huile remonter. La marque de mélasse change tout — 250 ml ici calé sur Cortas (libanaise) ; pour Rob-e Anar (pâte iranienne épaisse, version Batmanglij authentique), réduire à 130 ml et augmenter l'eau à 700 ml. Préparer la veille améliore. Servir avec un tahdig (croûte de riz dorée)."},
-    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (1986) — spine, canon persan (extrait via Saffron and Lemons blog) ; Sabrina Ghayour, *Persiana* (2014) ; Persian-Mama. Naz Deravian, *Bottom of the Pot* — non intégrée (fetch interrompu). Synthétisée par recipe-forge v17 le 2026-05-06."}
+    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (1986) — spine, canon persan (extrait via Saffron and Lemons blog) ; Sabrina Ghayour, *Persiana* (2014) ; Persian-Mama. Naz Deravian, *Bottom of the Pot* — non intégrée (fetch interrompu). Synthétisée par recipe-forge v18 le 2026-05-06."}
   ]
 }
 ```
