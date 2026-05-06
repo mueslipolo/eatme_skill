@@ -231,6 +231,7 @@ Before producing the JSON, walk these checks. Fix anything that fails:
 - [ ] **Yield:** `recipeYield` matches the spine source's yield (or 4–6 default).
 - [ ] **Notes block:** top-level `notes` array (NOT trailing HowToSteps) contains both "Note du chef" and "Sources" entries; Sources includes synthesis date and skill version string.
 - [ ] **Image (if available):** spine source's recipe photo URL captured during fetch; add as `image` field. Skip rather than fabricate or use stock images. **The URL must return HTTP 200 directly — Mealie does not follow redirects on image fetches.** Prefer direct CDN URLs over redirecting og:image URLs.
+- [ ] **Concision pass:** scan each ingredient string for adjectives — would removing the qualifier change the dish? If no, drop it. (`fraîchement moulu`, `frais`, `de qualité`, `vierge extra` for cooking, etc.) Salt: keep `gros sel` and `fleur de sel` — real products, not synonyms.
 - [ ] **Dietary tags:** scan ingredients; append every applicable tag (`Vegan`, `Végétarien`, `Sans gluten`, `Sans lactose`, `Sans œufs`, `Sans fruits à coque`) to `keywords`. Skip rather than guess.
 - [ ] **JSON validity:** valid JSON syntax, starts with `{`.
 
@@ -295,6 +296,40 @@ might want the original English reference.
 - Standard ingredients with clean translation: `oignon`, `ail`, `tomate`, `farine`, `sucre`, `beurre`, `huile d'olive`
 - Quantities and units alone
 - Recipe instructions (technique translates fine)
+
+### Concision — state only what changes the dish
+
+A qualifier earns its place **only if a cook picking the wrong default would produce a measurably different result.** Strip the rest. Verbose ingredient strings are noise that hides the real signal.
+
+**Drop these (no cooking impact):**
+- `fraîchement moulu` for poivre — pepper from the mill is the only sensible choice. Just `poivre noir`.
+- `frais` / `fraîches` — the user always picks the freshest available; redundant.
+- Quality adjectives : `de bonne qualité`, `premium`, `de qualité supérieure`.
+- `vierge extra` on olive oil — keep only when used raw (final drizzle, vinaigrette where the oil's character is the dish). For cooking just `huile d'olive`.
+- `kosher salt` / `sea salt` parentheticals — American convention, not a real French distinction.
+- `finement haché` / `grossièrement haché` only when the size genuinely matters (changes cooking time, texture); otherwise just `haché`.
+- Origin labels (`AOP`, `D.O.P.`, `de Modène`, `de Guérande`) unless the origin produces a measurable cooking difference.
+
+**Keep these (genuine outcome differences):**
+- **Cuts of meat** — `paleron`, `bavette`, `onglet`, `pointe de poitrine`, `épaule`, `gigot`. The cut IS the dish.
+- **Flour T-numbers** — T45/T55/T65/T80. Protein content changes texture.
+- **Cream type** — `crème entière 35 % MG` (heavy, for sauces and reductions), `crème fleurette 30 %` (whipping), `crème fraîche`, `crème aigre` — all behave differently.
+- **Salt distinctions — real products, not synonyms:**
+  - `sel` = sel fin (default for cooking).
+  - `gros sel` = coarse salt — keep when technique-critical (croûte de sel, eau de cuisson des pâtes, salage à sec d'une viande). **NOT a synonym for sel fin.** A recipe asking for `gros sel` and getting sel fin will be over-salted.
+  - `fleur de sel` = finishing salt only (sprinkle final sur une viande grillée, une salade). For cooking, just `sel`.
+- **Tomato form** — `pelées` / `concassées` / `passata` / `concentré`. Different products, different texture.
+- **Milk fat** — `lait entier` only when the fat matters (sauces crémeuses, braisage long). Otherwise just `lait`.
+- **Butter** — `beurre demi-sel` when it shifts the seasoning math; default `beurre` = doux/non salé.
+- **Brand callouts** — only when brand produces measurable difference. Defensible: Cortas pour mélasse de grenade (concentration varie 2× entre marques), San Marzano D.O.P. pour tomates pelées (acidité et chair caractéristiques). Not defensible: marque commerciale d'huile d'olive ou de farine standard.
+- **Technique-state qualifiers** — `réduit`, `fondu`, `tempéré`, `infusé`, `grillé puis moulu` — all change what the cook does next. Keep.
+
+**Edge cases:**
+- `huile neutre` (tournesol/colza) only when contrasted with `huile d'olive` in the same recipe; otherwise just `huile`.
+- Pan size in `tool[]` — keep only when it constrains the recipe (too small = pas de saisie, trop grande = réduction faussée). Otherwise just `Cocotte`, `Sauteuse`.
+- English fallbacks for cuts and US-specific ingredients still apply (see above) — those are about translation precision, not concision.
+
+**Test before output:** for each ingredient string, ask "would removing this qualifier change what the cook does or what the dish becomes?" If no, drop it. Verbose phrasing is a tell of LLM-generated content; concise phrasing reads like a working chef wrote it.
 
 ## Dietary tag auto-detection
 
@@ -417,11 +452,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v14 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v15 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v14`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v15`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -483,7 +518,7 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
   ],
   "notes": [
     {"title": "Note du chef", "text": "La qualité des noix est la variable dominante — utiliser des noix fraîches, jamais pré-moulues. Spine : Najmieh Batmanglij, *Food of Life*. Ratio de mélasse de grenade ajusté vers Persian-Mama pour une finition plus vive."},
-    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (spine) ; Persian-Mama ; Saveur ; Sabrina Ghayour, *Persiana*. Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v14 le 2026-05-05."}
+    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (spine) ; Persian-Mama ; Saveur ; Sabrina Ghayour, *Persiana*. Version NYT Cooking inaccessible (paywall, pas de republication trouvée). Synthétisée par recipe-forge v15 le 2026-05-05."}
   ]
 }
 ```
