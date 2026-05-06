@@ -223,7 +223,7 @@ Before producing the JSON, walk these checks. Fix anything that fails:
 - [ ] **Notes block:** top-level `notes` array (NOT trailing HowToSteps) contains both "Note du chef" and "Sources" entries; Sources includes synthesis date and skill version string.
 - [ ] **Image (if available):** spine source's recipe photo URL captured during fetch; add as `image` field. Skip rather than fabricate or use stock images. **The URL must return HTTP 200 directly — Mealie does not follow redirects on image fetches.** Prefer direct CDN URLs over redirecting og:image URLs.
 - [ ] **Concision pass:** scan each ingredient string for adjectives — would removing the qualifier change the dish? If no, drop it. (`fraîchement moulu`, `frais`, `de qualité`, `vierge extra` for cooking, etc.) Salt: keep `gros sel` and `fleur de sel` — real products, not synonyms.
-- [ ] **Dietary tags:** scan ingredients; append every applicable tag (`Vegan`, `Végétarien`, `Sans gluten`, `Sans lactose`, `Sans œufs`, `Sans fruits à coque`) to `keywords`. Skip rather than guess.
+- [ ] **Wife-friendly tag:** scan ingredients for porc / fruits de mer / produits laitiers / gluten. If none → auto-tag `Pour ma femme`. If present and adaptation is sensible (forbidden = auxiliary, substitute preserves dish identity) → surface as last DECISION. If forbidden ingredient is structural (carbonara, gratin, lasagne, etc.) → don't suggest, output as-is. **No other dietary tags are emitted.**
 - [ ] **JSON validity:** valid JSON syntax, starts with `{`.
 
 ### 7. Output — see OUTPUT FORMAT.
@@ -341,49 +341,79 @@ A qualifier earns its place **only if a cook picking the wrong default would pro
 
 **Test before output:** for each ingredient string, ask "would removing this qualifier change what the cook does or what the dish becomes?" If no, drop it. Verbose phrasing is a tell of LLM-generated content; concise phrasing reads like a working chef wrote it.
 
-## Dietary tag auto-detection
+## Wife-friendly tag and adaptation suggestions
 
-After synthesising the ingredient list, scan it and append the appropriate
-French dietary tags to `keywords`. **Conservative rule: only add a tag if
-confident. When in doubt, skip — better to undercount than mislabel.**
+The user's wife eats **no porc, no fruits de mer / poisson, no produits laitiers, no gluten**. The skill emits a single tag — `Pour ma femme` — when the recipe naturally fits this constraint. When it does not, the skill may surface a sensible adaptation as a DECISION (NOT auto-apply).
 
-### Tags to detect
+This replaces the previous Vegan/Végétarien/Sans gluten/etc. tag system entirely. No other dietary tags are emitted.
 
-| Tag | Add when the recipe contains NONE of these (in any form, including hidden) |
+### Forbidden ingredients to scan for
+
+| Catégorie | Inclut (toutes formes, y compris cachées) |
 |---|---|
-| `Vegan` | viande, poisson, volaille, fruits de mer, œuf, lait, crème, beurre, fromage, yaourt, miel, gélatine, anchois, lardons, charcuterie, bouillon de viande/volaille/poisson, sauce Worcestershire (anchois), sauce de poisson |
-| `Végétarien` | viande, poisson, volaille, fruits de mer, anchois, gélatine, lardons, charcuterie, bouillon de viande/volaille/poisson, sauce Worcestershire, sauce de poisson |
-| `Sans gluten` | blé (et farines T45/T55/T65/T80), épeautre, seigle, orge, avoine non certifiée GF, pain, pâtes standard, couscous, semoule de blé, bulgur, sauce soja standard (utiliser tamari pour GF), bière |
-| `Sans lactose` | lait, crème (toutes), beurre, fromage, yaourt, ghee, lactosérum, caséine, lait en poudre |
-| `Sans œufs` | œuf entier, jaune, blanc, mayonnaise standard, certaines pâtes fraîches, blanc monté |
-| `Sans fruits à coque` | noix, amande, noisette, pistache, noix de cajou, pécan, macadamia, noix de pin, noix du Brésil |
+| **Porc** | porc, lard, lardons, pancetta, jambon, prosciutto, bacon, chorizo, saucisse de porc, andouille, boudin noir, saindoux, saucisson, terrine au porc |
+| **Poisson / fruits de mer** | poisson (tous), crevettes, moules, huîtres, palourdes, crabe, homard, anchois, sauce de poisson, dashi, bottarga, **sauce Worcestershire** (contient anchois) |
+| **Produits laitiers** | lait, crème (toutes formes), beurre, fromage, yaourt, ghee, lactosérum, caséine, lait en poudre, faisselle, fromage blanc |
+| **Gluten** | blé (T45/55/65/80), épeautre, seigle, orge, avoine non certifiée GF, pain, pâtes standard, couscous, semoule de blé, bulgur, **sauce soja standard** (contient blé — utiliser tamari pour GF), **bière**, certains bouillons commerciaux |
 
-### Implication and overlap
+### Auto-tag rule
 
-- A truly vegan recipe is also `Végétarien`, `Sans lactose`, `Sans œufs`. Emit **all four** — users may filter on any.
-- `Sans gluten` and `Sans fruits à coque` are independent of vegan/vegetarian status — evaluate separately.
-- `Végétarien` is added even when not vegan (e.g. recipe with cheese but no meat).
+If the recipe contains **none** of the above (in any form, including hidden), append `Pour ma femme` to `keywords`. Conservative — when uncertain about a sauce, stock, or processed ingredient, do NOT tag.
 
-### Hidden ingredients — common gotchas
+### Adaptation suggestions — only when sensible
 
-- **Sauce Worcestershire** : contient des anchois → pas végétarien.
-- **Sauce soja standard** : contient du blé → pas sans gluten (utiliser tamari).
-- **Bouillons commerciaux** : souvent à base de viande → pas végétarien sauf mention explicite.
-- **Pâtes fraîches du commerce** : souvent avec œuf → pas sans œufs.
-- **Vin de cuisson** : alcool — pertinent pour halal mais pas pour les tags listés ici.
+If the recipe contains forbidden ingredients but a substitution preserves the dish, surface an adaptation DECISION. **The user picks whether to include the adapted variant.** If they pick it, apply the substitutions in `recipeIngredient` + `recipeInstructions` and add the `Pour ma femme` tag.
 
-If a recipe relies on a sauce or stock whose composition isn't explicit, treat it as containing the most-restrictive ingredient and skip the dietary tag.
+**Sensible adaptation** (DO suggest) — the forbidden ingredient is auxiliary, a substitute preserves character:
+- Mijoté avec un peu de beurre en finition → remplacer par huile d'olive
+- Bolognese avec pancetta optionnelle → omettre la pancetta, la sauce reste excellente
+- Risotto aux champignons avec parmesan en finition → omettre, finir à l'huile d'olive (caractère légèrement modifié mais reste un risotto)
+- Sauce tomate avec un trait de crème → remplacer par eau de cuisson des légumes
+
+**NOT sensible** (do NOT suggest) — the forbidden ingredient IS the dish, or substitution fundamentally changes it:
+- **Carbonara** : pancetta + pecorino + œufs sur pâtes au blé. Tout est forbidden ; le plat EST cela.
+- **Gratin dauphinois** : crème + lait. Le gratin EST une crème ; sans crème ce n'est pas un gratin.
+- **Lasagnes bolognaise** : pâtes + viande + béchamel. 3 forbidden structurels = autre plat.
+- **Carbonnade flamande** : lardons + bière + pain d'épices. La tradition flamande EST faite de cela.
+- **Raclette, fondue, croque-monsieur, tartiflette** : forbidden = essence du plat.
+- **Pâtisserie technique** (tarte feuilletée, brioche, choux, etc.) : single-source mode + structure dépend du beurre/farine. Pas d'adaptation.
+- **Plats où 2+ catégories forbidden sont structurelles** : substituer chaque ingrédient = dish identity perdue. Skip.
+
+**Default behaviour : favoriser la non-suggestion.** Une mauvaise adaptation insulte la recette ; mieux vaut ne rien proposer que proposer une version dégradée.
+
+### Decision format
+
+Surface as the LAST decision (after culinary decisions D1, D2, …) :
+
+```
+[D3] Adaptation femme (sans porc / fruits de mer / lactose / gluten)
+  A — Recette telle quelle (pas adaptée pour la femme)
+  B — Variante femme : retirer la pancetta, remplacer le beurre par 1 c. à soupe d'huile d'olive supplémentaire
+       → ajoute le tag « Pour ma femme »
+```
+
+If user picks B:
+- Apply substitutions in `recipeIngredient` and `recipeInstructions`
+- Add `Pour ma femme` to `keywords`
+- Mention the adaptation in the chef's note: "Version adaptée : sans pancetta, beurre remplacé par huile d'olive."
+
+If user picks A or omits this decision: output the original recipe without the tag.
 
 ### Worked examples
 
-| Recipe | Detected tags |
-|---|---|
-| Ratatouille (légumes + huile d'olive) | `Vegan, Végétarien, Sans lactose, Sans œufs, Sans gluten, Sans fruits à coque` |
-| Sauce tomate à la mirepoix (notre exemple) | `Vegan, Végétarien, Sans lactose, Sans œufs, Sans gluten, Sans fruits à coque` |
-| Fesenjān (poulet + noix) | `Sans gluten, Sans lactose, Sans œufs` (pas vegan/végétarien à cause du poulet ; pas sans fruits à coque à cause des noix) |
-| Lasagnes bolognaise | aucun tag (viande, blé, lait, œuf) |
-| Tarte au citron meringuée | `Végétarien` seulement |
-| Risotto aux champignons (au beurre + parmesan) | `Végétarien, Sans gluten` |
+| Plat | Auto-tag ? | Adaptation suggérée ? |
+|---|---|---|
+| Sauce tomate à la mirepoix | OUI (aucun forbidden) | n/a |
+| Fesenjan (poulet, noix, mélasse de grenade) | OUI (aucun forbidden) | n/a |
+| Brownies patate douce de Pamela Salzman (sans farine, sans lait) | OUI (aucun forbidden) | n/a |
+| Ratatouille | OUI (aucun forbidden) | n/a |
+| Bolognese | NON (porc, lait, gluten via pâtes) | Possible : omettre pancetta + remplacer beurre par huile + servir avec pâtes GF (3 substitutions, marginalement sensible — proposer en DECISION) |
+| Carbonara | NON (3 forbidden structurels) | NE PAS PROPOSER — c'est l'essence du plat |
+| Carbonnade flamande | NON (porc, gluten) | NE PAS PROPOSER — tradition flamande |
+| Agneau de 7 h (avec beurre) | NON (lactose) | OUI : remplacer le beurre par huile d'olive — substitution propre, plat préservé |
+| Émincé zurichois (crème + beurre) | NON (lactose, structurelle) | NE PAS PROPOSER — la sauce à la crème EST le plat |
+| Gratin dauphinois | NON | NE PAS PROPOSER — crème est structurelle |
+| Risotto aux champignons | NON (parmesan + bouillon parfois sur lait) | Possible : sans parmesan, finir à l'huile d'olive — proposer en DECISION |
 
 ## OUTPUT FORMAT
 
@@ -480,11 +510,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v18 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v19 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v18`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v19`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -526,7 +556,7 @@ Assuming the user picked `D1=A, D2=A` (Cortas mélasse, with cannelle) for the d
   "totalTime": "PT2H30M",
   "recipeCategory": "Plat principal",
   "recipeCuisine": "Persane",
-  "keywords": "persan, iranien, khoresh, ragoût, noix, grenade, mijoté, plat de fête, Sans gluten, Sans lactose, Sans œufs",
+  "keywords": "persan, iranien, khoresh, ragoût, noix, grenade, mijoté, plat de fête, Pour ma femme",
   "url": "https://www.najmieh.com/recipes/",
   "image": "https://persianmama.com/wp-content/uploads/2014/11/fesenjan-last.jpg",
   "tool": ["Cocotte épaisse 4 L", "Robot mixeur"],
@@ -553,7 +583,7 @@ Assuming the user picked `D1=A, D2=A` (Cortas mélasse, with cannelle) for the d
   ],
   "notes": [
     {"title": "Note du chef", "text": "Cerneaux frais (jamais pré-moulus, l'huile rancit) mixés au moment. Mijotage long non négociable : la sauce doit virer brun foncé, l'huile remonter. La marque de mélasse change tout — 250 ml ici calé sur Cortas (libanaise) ; pour Rob-e Anar (pâte iranienne épaisse, version Batmanglij authentique), réduire à 130 ml et augmenter l'eau à 700 ml. Préparer la veille améliore. Servir avec un tahdig (croûte de riz dorée)."},
-    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (1986) — spine, canon persan (extrait via Saffron and Lemons blog) ; Sabrina Ghayour, *Persiana* (2014) ; Persian-Mama. Naz Deravian, *Bottom of the Pot* — non intégrée (fetch interrompu). Synthétisée par recipe-forge v18 le 2026-05-06."}
+    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (1986) — spine, canon persan (extrait via Saffron and Lemons blog) ; Sabrina Ghayour, *Persiana* (2014) ; Persian-Mama. Naz Deravian, *Bottom of the Pot* — non intégrée (fetch interrompu). Synthétisée par recipe-forge v19 le 2026-05-06."}
   ]
 }
 ```
