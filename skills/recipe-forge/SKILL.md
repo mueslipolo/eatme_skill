@@ -119,7 +119,7 @@ Walk these five checks. Fix anything that fails:
 - [ ] **Time math:** `totalTime` = `prepTime` + `cookTime` exactly (rest/passive folds into `cookTime`).
 - [ ] **Notes block:** top-level `notes` array — NOT trailing HowToSteps. Includes "Note du chef" and "Sources" (with synthesis date + skill version).
 - [ ] **Image:** if present, URL returns 200 directly (no redirect). Otherwise omit.
-- [ ] **Pour Shelly tag:** auto-add if no porc/fruits de mer/produits laitiers/gluten. Surface adaptation as LAST decision only if the substitute preserves the dish.
+- [ ] **Pour Shelly tag:** auto-add if no porc/fruits de mer/produits laitiers/gluten. If forbidden present and adaptation sensible, log as LAST decision (default = original, alternative = adapted) — don't auto-apply the substitution.
 
 ### 7. Output — see OUTPUT FORMAT.
 
@@ -269,21 +269,20 @@ If the recipe contains forbidden ingredients but a substitution preserves the di
 
 ### Decision format
 
-Surface as the LAST decision (after culinary decisions D1, D2, …) :
+Log as the LAST decision (after culinary D1, D2, …). **Default = original recipe (no substitution, no tag).** The adaptation is the alternative ; user requests it explicitly.
 
 ```
-[D3] Adaptation femme (sans porc / fruits de mer / lactose / gluten)
-  A — Recette telle quelle (pas adaptée pour la femme)
-  B — Variante femme : retirer la pancetta, remplacer le beurre par 1 c. à soupe d'huile d'olive supplémentaire
-       → ajoute le tag « Pour Shelly »
+[D3] Adaptation pour Shelly (sans porc / fruits de mer / lactose / gluten)
+     Choisi : recette telle quelle (sans tag)
+     Alternative : retirer la pancetta, remplacer le beurre par 1 c. à soupe d'huile d'olive supplémentaire → ajoute le tag « Pour Shelly »
 ```
 
-If user picks B:
+If user later says "applique D3" or "swap D3 to alt":
 - Apply substitutions in `recipeIngredient` and `recipeInstructions`
 - Add `Pour Shelly` to `keywords`
-- Mention the adaptation in the chef's note: "Version adaptée : sans pancetta, beurre remplacé par huile d'olive."
+- Mention in chef's note: "Version adaptée : sans pancetta, beurre remplacé par huile d'olive."
 
-If user picks A or omits this decision: output the original recipe without the tag.
+Otherwise: original recipe stands, no tag.
 
 ### Worked examples
 
@@ -317,33 +316,30 @@ When a republication was used, show the original URL → actual URL with an arro
 | 3 | Persian-Mama | https://persianmama.com/chicken-in-walnut-pomegranate-sauce-khoresht-fesenjan/ | fetched | |
 | 4 | Naz Deravian, *Bottom of the Pot* (2018) | https://bottomofthepot.com/.../khoresh-fesenjan/ | unfetched (stream interrupted, no faithful republication) | |
 
-### Section 2 — DECISIONS
+### Section 2 — DECISIONS LOG (informational)
 
-Present each significant disagreement as options. **Do NOT auto-apply or recommend** — the user knows what's best. Each option states its source/authority and the cooking profile produced. Cap at 3 decisions ; surface only choices that meaningfully change the dish. `défaut` follows the spine source's option.
+For each meaningful disagreement between sources, **apply the spine source's choice automatically** and log it alongside the alternative. The user reads, the JSON is generated immediately in Section 3, and they override only if they want.
 
-⛔ **HARD STOP after Section 2.** Do NOT produce Section 3 in the same turn. If you've started writing JSON without the user's response, you've broken this rule — stop and wait.
+Cap at 3 logged decisions ; surface only choices that meaningfully change the dish (technique, structural quantities, defining flavour). Don't log micro-style differences.
 
+Format:
 ```
 [D1] Forme de mélasse de grenade
-  A — Cortas (libanaise, accessible Suisse/France) : 250 ml + 500 ml d'eau
-       aigre-doux modéré, équilibre standard
-  B — Rob-e Anar (pâte iranienne épaisse, version Batmanglij = spine) : 130 ml + 700 ml d'eau
-       tradition persane authentique, plus aigre, couleur plus foncée
+     Choisi : Cortas (libanaise, accessible Suisse/France) — 250 ml + 500 ml d'eau
+     Alternative : Rob-e Anar (pâte iranienne épaisse, version Batmanglij authentique) — 130 ml + 700 ml d'eau ; plus aigre, couleur plus foncée
 
-[D2] Cannelle
-  A — Batmanglij (spine), Persian-Mama : 0,5 c. à café de cannelle moulue
-       accent rond, classique persan
-  B — Ghayour : aucune
-       goût plus pur de noix et grenade
+[D2] Cannelle moulue
+     Choisi : 0,5 c. à café (Batmanglij spine, Persian-Mama)
+     Alternative : aucune (Ghayour, goût plus pur de noix et grenade)
 ```
 
-**For bakes (single-source mode):** SOURCES has one row ; DECISIONS lists no decisions (`Recette suivie à la lettre depuis [source].`) or only variants the source itself proposes.
+**Override mechanism (out-of-band):** if the user later says "swap D1" / "applique l'alternative D2" / "passe D1 en alt" / etc., regenerate the JSON with the alternative applied for that decision.
 
-End Section 2 with this exact prompt:
+**For bakes (single-source mode):** SOURCES has one row, DECISIONS LOG is `Recette suivie à la lettre depuis [source].` — or, if the source itself offers internal variants (chocolate vs vanilla), log them in the same Choisi/Alternative format.
 
-> **STOP.** Quelles options ? (`D1=A, D2=B, …` ou `défaut`)
+If no significant disagreements: `Pas de désaccord notable — synthèse basée sur [spine].`
 
-If no significant disagreements: `Pas de désaccord notable — synthèse basée sur [spine].` and proceed directly to Section 3 in the same turn (no waiting needed since there's nothing to ask).
+**No pause.** Proceed directly to Section 3 in the same turn.
 
 ### Section 3 — schema.org Recipe JSON-LD
 
@@ -394,11 +390,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v22 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v23 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v22`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v23`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -426,7 +422,7 @@ Use European decimal comma where natural (`0,5 c. à café`). Quantities are ins
 
 ### Example
 
-Assuming the user picked `D1=A, D2=A` (Cortas mélasse, with cannelle) for the decisions shown earlier:
+JSON below applies spine choices (Cortas mélasse, with cannelle, no Shelly adaptation) per the DECISIONS LOG shown earlier:
 
 ```json
 {
@@ -466,7 +462,7 @@ Assuming the user picked `D1=A, D2=A` (Cortas mélasse, with cannelle) for the d
   ],
   "notes": [
     {"title": "Note du chef", "text": "Cerneaux frais mixés au moment. Mijotage long non négociable. 250 ml calé sur Cortas ; pour Rob-e Anar épais, 130 ml + 700 ml d'eau."},
-    {"title": "Sources", "text": "Batmanglij, *Food of Life* (spine, via Saffron and Lemons) ; Ghayour, *Persiana* ; Persian-Mama. Synthétisée par recipe-forge v22 le 2026-05-06."}
+    {"title": "Sources", "text": "Batmanglij, *Food of Life* (spine, via Saffron and Lemons) ; Ghayour, *Persiana* ; Persian-Mama. Synthétisée par recipe-forge v23 le 2026-05-06."}
   ]
 }
 ```
