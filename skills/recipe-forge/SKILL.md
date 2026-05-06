@@ -51,8 +51,9 @@ Search for the recipe republished/excerpted (Reddit, blogs, book reviews). Cite 
 | French | *Larousse Gastronomique* (Robuchon ed.) ; Bocuse, *La Cuisine du Marché* ; Pépin, *La Technique* / *La Méthode* ; Hermé (pâtisserie) |
 | Italian | Hazan, *Essentials of Classic Italian Cooking* ; Artusi, *La Scienza in Cucina* (1891) ; Bastianich, *Lidia's Italy* |
 | **Ottolenghi (★ favori Yves — vérifier en priorité pour tout plat méditerranéen, levantin, végétal, ou fusion moderne)** | *Jerusalem* (avec Tamimi, 2012) ; *Plenty* (2010) / *Plenty More* ; *Simple* (2018) ; *Flavour* (2020) ; *Comfort* (2024) ; *NOPI* ; *Ottolenghi: The Cookbook* ; *Sweet* (pâtisserie) |
+| **Ghayour, *Persiana* (★★ favori Yves #2 — vérifier en priorité pour tout plat persan, levantin moderne, ou féerique)** | *Persiana* (2014) ; *Sirocco* (2016) ; *Feasts* (2017) ; *Bazaar* (2019, végétarien) ; *Simply* (2020) |
 | Moyen-Orient (autres) | Roden, *A Book of Middle Eastern Food* ; Tamimi, *Falastin* ; Wolfert, *The Food of Morocco* |
-| Persan / Iranien | Batmanglij, *Food of Life* (1986) — the Persian bible ; Ghayour, *Persiana* (2014) |
+| Persan / Iranien (canon) | Batmanglij, *Food of Life* (1986) — the Persian bible |
 | Britannique | Slater, *Tender* / *The Kitchen Diaries* ; Heston, *In Search of Perfection* (technique) |
 | Américain | Keller, *Bouchon* / *Ad Hoc at Home* ; Kenji, *The Food Lab* ; Nosrat, *Salt Fat Acid Heat* |
 | Chinois / Asie de l'Est | Dunlop, *Every Grain of Rice* / *Land of Plenty* ; Maangchi, *Real Korean Cooking* ; *Just One Cookbook* (Nami Chen, Japonais) |
