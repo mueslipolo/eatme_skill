@@ -394,11 +394,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v21 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v22 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v21`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v22`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -445,29 +445,28 @@ Assuming the user picked `D1=A, D2=A` (Cortas mélasse, with cannelle) for the d
   "image": "https://persianmama.com/wp-content/uploads/2014/11/fesenjan-last.jpg",
   "tool": ["Cocotte épaisse 4 L", "Robot mixeur"],
   "recipeIngredient": [
-    "1 kg de cuisses ou pilons de poulet, sans peau (skinless chicken thighs or drumsticks)",
+    "1 kg de cuisses de poulet sans peau (skinless chicken thighs)",
     "450 g de cerneaux de noix",
     "2 gros oignons, émincés",
     "5 c. à soupe d'huile",
-    "250 ml de mélasse de grenade Cortas (voir Note du chef pour autres marques)",
+    "250 ml de mélasse de grenade Cortas",
     "500 ml d'eau",
     "0,25 c. à café de pistils de safran, infusés dans 2 c. à soupe d'eau chaude",
     "0,5 c. à café de cannelle moulue",
     "2 c. à soupe de sucre, à ajuster",
-    "1 c. à café de gros sel",
-    "Quelques grains de grenade, pour le service"
+    "1 c. à café de gros sel"
   ],
   "recipeInstructions": [
-    {"@type": "HowToStep", "text": "Chauffer 3 c. à soupe d'huile dans une cocotte épaisse à feu moyen et faire dorer les oignons 12 min, jusqu'à coloration profonde."},
-    {"@type": "HowToStep", "text": "Pousser les oignons sur le côté, ajouter 2 c. à soupe d'huile et faire dorer le poulet de tous côtés, 6 min."},
-    {"@type": "HowToStep", "text": "Mixer les cerneaux au robot jusqu'à pâte beige fine, en raclant les bords plusieurs fois."},
-    {"@type": "HowToStep", "text": "Verser la pâte de noix et l'eau sur le poulet et les oignons. Ajouter mélasse, safran infusé, cannelle, sucre et sel ; mélanger délicatement."},
-    {"@type": "HowToStep", "text": "Couvrir et mijoter à feu très doux, 2 h, en remuant toutes les 20 min. La sauce devient brun foncé, l'huile remonte à la surface."},
-    {"@type": "HowToStep", "text": "Goûter et ajuster — mélasse si trop sucré, sucre si trop acide. Servir avec riz basmati safrané et grains de grenade."}
+    {"@type": "HowToStep", "text": "Chauffer 3 c. à soupe d'huile dans une cocotte à feu moyen, faire dorer les oignons 12 min."},
+    {"@type": "HowToStep", "text": "Pousser les oignons, ajouter 2 c. à soupe d'huile, faire dorer le poulet 6 min."},
+    {"@type": "HowToStep", "text": "Mixer les cerneaux au robot jusqu'à pâte beige fine."},
+    {"@type": "HowToStep", "text": "Verser la pâte de noix et l'eau sur la viande. Ajouter mélasse, safran infusé, cannelle, sucre et sel."},
+    {"@type": "HowToStep", "text": "Couvrir et mijoter à feu très doux, 2 h, en remuant toutes les 20 min. Sauce brun foncé, huile remontée."},
+    {"@type": "HowToStep", "text": "Goûter, ajuster, servir avec riz basmati safrané."}
   ],
   "notes": [
-    {"title": "Note du chef", "text": "Cerneaux frais (jamais pré-moulus, l'huile rancit) mixés au moment. Mijotage long non négociable : la sauce doit virer brun foncé, l'huile remonter. La marque de mélasse change tout — 250 ml ici calé sur Cortas (libanaise) ; pour Rob-e Anar (pâte iranienne épaisse, version Batmanglij authentique), réduire à 130 ml et augmenter l'eau à 700 ml. Préparer la veille améliore. Servir avec un tahdig (croûte de riz dorée)."},
-    {"title": "Sources", "text": "Najmieh Batmanglij, *Food of Life* (1986) — spine, canon persan (extrait via Saffron and Lemons blog) ; Sabrina Ghayour, *Persiana* (2014) ; Persian-Mama. Naz Deravian, *Bottom of the Pot* — non intégrée (fetch interrompu). Synthétisée par recipe-forge v21 le 2026-05-06."}
+    {"title": "Note du chef", "text": "Cerneaux frais mixés au moment. Mijotage long non négociable. 250 ml calé sur Cortas ; pour Rob-e Anar épais, 130 ml + 700 ml d'eau."},
+    {"title": "Sources", "text": "Batmanglij, *Food of Life* (spine, via Saffron and Lemons) ; Ghayour, *Persiana* ; Persian-Mama. Synthétisée par recipe-forge v22 le 2026-05-06."}
   ]
 }
 ```
