@@ -1,6 +1,6 @@
 ---
 name: recipe-forge
-description: Synthesises a canonical recipe in French from trusted sources and outputs Mealie-importable schema.org/Recipe JSON-LD. Use when the user asks to forge, build, import, or synthesise a recipe — or provides a URL, YouTube link, or dish name like "fesenjān". Auto-tags "Pour Shelly" for diet-compatible recipes (no porc / fruits de mer / produits laitiers / gluten). Technical bakes (cakes, cookies, breads, pastry, soufflés, custards) use single-source mode.
+description: Synthesises a canonical recipe in French from trusted sources and outputs Mealie-importable schema.org/Recipe JSON-LD. Use when the user asks to forge, build, import, or synthesise a recipe — or provides a URL, YouTube link, or dish name like "fesenjān". Auto-tags "Pour Shelly" for diet-compatible recipes (no porc / fruits de mer / lait & crème & fromage & yaourt / gluten — beurre et ghee OK). Technical bakes (cakes, cookies, breads, pastry, soufflés, custards) use single-source mode.
 ---
 
 # Recipe Forge
@@ -40,7 +40,60 @@ No other arguments.
 
 If technical bake (see CRITICAL RULE 10) → single-source mode (present candidates, user picks spine). Otherwise: **web_search** for 3–5 reputable versions, including a canonical-cookbook reference when one applies (see below).
 
-**Web prioritisation:** famous chefs (Ottolenghi, Hazan, Roden, Pépin, Bocuse, Ducasse, Slater, Kenji); authoritative sites (NYT Cooking, Serious Eats, Saveur, Bon Appétit, Académie du Goût); French (Marmiton, Chef Simon, La Cuisine de Bernard, 750g, Papilles et Pupilles); regional (Persian-Mama, Maangchi, Just One Cookbook, Vincenzo's Plate). **Avoid** SEO-bloat blogs and content farms.
+**Web prioritisation:** famous chefs (Ottolenghi, Hazan, Roden, Pépin, Bocuse, Ducasse, Slater, Kenji); authoritative sites (NYT Cooking, Serious Eats, Saveur, Bon Appétit, Académie du Goût); French (Marmiton, Chef Simon, La Cuisine de Bernard, 750g, Papilles et Pupilles); regional (Persian-Mama, Maangchi, Just One Cookbook, Vincenzo's Plate).
+
+#### Three-layer verification
+
+For any non-whitelist URL, run these in order. Cheap-and-deterministic before expensive-and-heuristic.
+
+##### Layer 1 — Mechanical blocklist (pre-fetch, deterministic)
+
+Check the candidate domain against **[Super-SEO-Spam-Suppressor](https://github.com/NotaInutilis/Super-SEO-Spam-Suppressor)** — the only community list with non-trivial French recipe-spam coverage (37k+ `.fr` domains, daily updates).
+
+- **In Claude Code (Bash available) :**
+  ```bash
+  DOMAIN="example.com"  # bare host, sans protocole ni www.
+  curl -s --max-time 5 https://raw.githubusercontent.com/NotaInutilis/Super-SEO-Spam-Suppressor/main/ublacklist.txt | grep -Fq "$DOMAIN" && echo BLOCKED || echo CLEAN
+  ```
+- **Sur claude.ai web (pas de Bash) :** `web_fetch` sur `https://github.com/search?q=repo%3ANotaInutilis%2FSuper-SEO-Spam-Suppressor+%22<domain>%22&type=code`, prompt : *« le domaine X est-il listé ? »*
+
+If listed → reject immediately. Mark in SOURCES `rejected (Super-SEO-Spam-Suppressor)` and try the next candidate.
+
+If list is unreachable (network failure, GitHub down) → skip Layer 1 silently, fall through to Layer 3. Don't block the recipe over a list miss.
+
+##### Layer 2 — Schema.org structural integrity (post-fetch, structural)
+
+After `web_fetch`, parse the JSON-LD. Real culinary publishers hand-curate it ; click farms auto-generate it. Score the source:
+
+- **`author`** present AND `@type == "Person"` AND has a `name` that is not just the site's brand → +0
+- `author` missing OR bare string OR `@type == "Organization" / WebSite"` → **+1 slop point**
+- **`publisher.@type == "Organization"`** with a real `name` → +0
+- `publisher` missing → **+1 slop point**
+- `image` has `creator` / `photographer` / unique alt-text suggesting original photography → +0
+- `image` missing OR generic (stock URL, hash-named, CDN bulk) → **+1 slop point**
+
+**3 slop points = reject.** 2 = treat as low-trust (don't use as spine ; only as cross-check). 0–1 = pass.
+
+Cheap because the page is already fetched. Catches ~70% of farms that slip past Layer 1.
+
+##### Layer 3 — Heuristics screen (visual / textual signals)
+
+Run if Layers 1 & 2 didn't decide. Skip any source matching **two or more** of these signals:
+
+- **Anonymat de l'auteur.** Pas d'auteur crédité avec parcours culinaire vérifiable (formation, restaurants, livres, presse) sur la home, le footer, ou la page « À propos ». Pseudo seul ≠ auteur.
+- **Domaine mignon-anonyme.** `delablousealatoque.fr`, `la-cuisine-de-<prénom>.fr`, `recettes-faciles-X.fr`, `<adjectif>cuisine.fr` — naming pattern sans personne identifiable derrière.
+- **Titres clickbait.** « L'astuce pour… », « L'erreur de débutant qui… », « Ne jetez plus… », « Le plat qui change tout », « Vous ne ferez plus jamais… ».
+- **Photographie stock / interchangeable.** Pas de style photo identifiable, plats sur fond blanc générique, mêmes accessoires que 50 autres sites.
+- **Volume publication > 1/jour sans profondeur.** Recettes peu documentées : pas de température critique, pas de raisonnement, intros formulaïques répétées d'une recette à l'autre.
+- **Tells AI / SEO.** Phrasé en gabarit, listes d'ingrédients à quantités vagues (« une pincée », « un peu de »), conclusions génériques (« régalez-vous ! »), absence totale de note d'expérience personnelle.
+- **Densité publicitaire écrasante.** Recettes hachées par bandeaux, popups, contenus sponsorisés inline.
+- **Pas d'attribution** quand le contenu paraît dérivatif d'une source connue.
+
+**Vérification quand non-whitelist mais non-éliminé :** chercher le nom de l'auteur + son parcours (LinkedIn, presse, livre, restaurant). Pas de trace = exclure.
+
+**En cas de doute, exclure.** Mieux vaut 2 sources solides que 4 sources dont 2 douteuses — une ferme à clics dans le mix pollue la synthèse (quantités inventées, techniques approximatives, et le résultat est invisiblement faux).
+
+**Exemple confirmé à exclure :** `delablousealatoque.fr` — auteur anonyme, titres clickbait (« l'astuce pour… »), photos stock, phrasé formulaïque, contenu probablement IA.
 
 #### Reference cookbooks (canonical authorities by cuisine)
 
@@ -119,7 +172,7 @@ Walk these five checks. Fix anything that fails:
 - [ ] **Time math:** `totalTime` = `prepTime` + `cookTime` exactly (rest/passive folds into `cookTime`).
 - [ ] **Notes block:** top-level `notes` array — NOT trailing HowToSteps. Includes "Note du chef" and "Sources" (with synthesis date + skill version).
 - [ ] **Image:** if present, URL returns 200 directly (no redirect). Otherwise omit.
-- [ ] **Pour Shelly tag:** auto-add if no porc/fruits de mer/produits laitiers/gluten. If forbidden present and adaptation sensible, log as LAST decision (default = original, alternative = adapted) — don't auto-apply the substitution.
+- [ ] **Pour Shelly tag:** auto-add if no porc/fruits de mer/lait & crème & fromage & yaourt/gluten. **Beurre et ghee sont OK** (peu/pas de lactose) — ne pas considérer comme forbidden. Si forbidden présent et adaptation sensible, log as LAST decision (default = original, alternative = adapted) — don't auto-apply the substitution.
 
 ### 7. Output — see OUTPUT FORMAT.
 
@@ -229,7 +282,9 @@ A qualifier earns its place **only if a cook picking the wrong default would pro
 
 ## Wife-friendly tag and adaptation suggestions
 
-The user's wife eats **no porc, no fruits de mer / poisson, no produits laitiers, no gluten**. The skill emits a single tag — `Pour Shelly` — when the recipe naturally fits this constraint. When it does not, the skill may surface a sensible adaptation as a DECISION (NOT auto-apply).
+The user's wife eats **no porc, no fruits de mer / poisson, no produits laitiers (mais beurre et ghee sont OK), no gluten**. The skill emits a single tag — `Pour Shelly` — when the recipe naturally fits this constraint. When it does not, the skill may surface a sensible adaptation as a DECISION (NOT auto-apply).
+
+**Beurre & ghee — exception explicite.** Le beurre clarifié (ghee) et le beurre classique sont tolérés (lactose résiduel ≤ 1 % pour le beurre, ~0 % pour le ghee). Une recette qui n'utilise du « lactose » que sous forme de beurre/ghee est compatible Shelly et se voit attribuer le tag automatiquement.
 
 This replaces the previous Vegan/Végétarien/Sans gluten/etc. tag system entirely. No other dietary tags are emitted.
 
@@ -239,7 +294,7 @@ This replaces the previous Vegan/Végétarien/Sans gluten/etc. tag system entire
 |---|---|
 | **Porc** | porc, lard, lardons, pancetta, jambon, prosciutto, bacon, chorizo, saucisse de porc, andouille, boudin noir, saindoux, saucisson, terrine au porc |
 | **Poisson / fruits de mer** | poisson (tous), crevettes, moules, huîtres, palourdes, crabe, homard, anchois, sauce de poisson, dashi, bottarga, **sauce Worcestershire** (contient anchois) |
-| **Produits laitiers** | lait, crème (toutes formes), beurre, fromage, yaourt, ghee, lactosérum, caséine, lait en poudre, faisselle, fromage blanc |
+| **Produits laitiers** | lait, crème (toutes formes), fromage, yaourt, lactosérum, caséine, lait en poudre, faisselle, fromage blanc. **Exceptions : beurre et ghee — tolérés, ne PAS marquer forbidden.** |
 | **Gluten** | blé (T45/55/65/80), épeautre, seigle, orge, avoine non certifiée GF, pain, pâtes standard, couscous, semoule de blé, bulgur, **sauce soja standard** (contient blé — utiliser tamari pour GF), **bière**, certains bouillons commerciaux |
 
 ### Auto-tag rule
@@ -251,10 +306,10 @@ If the recipe contains **none** of the above (in any form, including hidden), ap
 If the recipe contains forbidden ingredients but a substitution preserves the dish, surface an adaptation DECISION. **The user picks whether to include the adapted variant.** If they pick it, apply the substitutions in `recipeIngredient` + `recipeInstructions` and add the `Pour Shelly` tag.
 
 **Sensible adaptation** (DO suggest) — the forbidden ingredient is auxiliary, a substitute preserves character:
-- Mijoté avec un peu de beurre en finition → remplacer par huile d'olive
 - Bolognese avec pancetta optionnelle → omettre la pancetta, la sauce reste excellente
-- Risotto aux champignons avec parmesan en finition → omettre, finir à l'huile d'olive (caractère légèrement modifié mais reste un risotto)
-- Sauce tomate avec un trait de crème → remplacer par eau de cuisson des légumes
+- Risotto aux champignons avec parmesan en finition → omettre, finir à l'huile d'olive ou au beurre (caractère légèrement modifié mais reste un risotto)
+- Sauce tomate avec un trait de crème → remplacer par eau de cuisson des légumes (ou un peu de beurre fondu en finition)
+- Plat où la crème adoucit une sauce courte → remplacer par beurre froid monté (beurre toléré)
 
 **NOT sensible** (do NOT suggest) — the forbidden ingredient IS the dish, or substitution fundamentally changes it:
 - **Carbonara** : pancetta + pecorino + œufs sur pâtes au blé. Tout est forbidden ; le plat EST cela.
@@ -292,13 +347,15 @@ Otherwise: original recipe stands, no tag.
 | Fesenjan (poulet, noix, mélasse de grenade) | OUI (aucun forbidden) | n/a |
 | Brownies patate douce de Pamela Salzman (sans farine, sans lait) | OUI (aucun forbidden) | n/a |
 | Ratatouille | OUI (aucun forbidden) | n/a |
-| Bolognese | NON (porc, lait, gluten via pâtes) | Possible : omettre pancetta + remplacer beurre par huile + servir avec pâtes GF (3 substitutions, marginalement sensible — proposer en DECISION) |
-| Carbonara | NON (3 forbidden structurels) | NE PAS PROPOSER — c'est l'essence du plat |
+| Bolognese | NON (porc, crème/lait, gluten via pâtes) | Possible : omettre pancetta + servir avec pâtes GF (le beurre éventuel est OK) — proposer en DECISION |
+| Carbonara | NON (porc + pecorino + pâtes au blé) | NE PAS PROPOSER — c'est l'essence du plat |
 | Carbonnade flamande | NON (porc, gluten) | NE PAS PROPOSER — tradition flamande |
-| Agneau de 7 h (avec beurre) | NON (lactose) | OUI : remplacer le beurre par huile d'olive — substitution propre, plat préservé |
-| Émincé zurichois (crème + beurre) | NON (lactose, structurelle) | NE PAS PROPOSER — la sauce à la crème EST le plat |
-| Gratin dauphinois | NON | NE PAS PROPOSER — crème est structurelle |
-| Risotto aux champignons | NON (parmesan + bouillon parfois sur lait) | Possible : sans parmesan, finir à l'huile d'olive — proposer en DECISION |
+| **Agneau de 7 h (avec beurre)** | **OUI** (beurre toléré, pas d'autre forbidden) | n/a |
+| Émincé zurichois (crème + beurre) | NON (crème = structurelle ; le beurre seul serait OK) | NE PAS PROPOSER — la sauce à la crème EST le plat |
+| Gratin dauphinois | NON (crème + lait structurels) | NE PAS PROPOSER — crème est structurelle |
+| Risotto aux champignons | NON (parmesan + bouillon parfois sur lait) | Possible : sans parmesan, finir à l'huile d'olive ou au beurre — proposer en DECISION |
+| **Sauce hollandaise / béarnaise** | **OUI** (beurre + jaune d'œuf — pas de lait/crème) | n/a |
+| **Pommes rissolées au beurre** | **OUI** | n/a |
 
 ## OUTPUT FORMAT
 
@@ -390,11 +447,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v23 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v26 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v23`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v26`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -462,7 +519,7 @@ JSON below applies spine choices (Cortas mélasse, with cannelle, no Shelly adap
   ],
   "notes": [
     {"title": "Note du chef", "text": "Cerneaux frais mixés au moment. Mijotage long non négociable. 250 ml calé sur Cortas ; pour Rob-e Anar épais, 130 ml + 700 ml d'eau."},
-    {"title": "Sources", "text": "Batmanglij, *Food of Life* (spine, via Saffron and Lemons) ; Ghayour, *Persiana* ; Persian-Mama. Synthétisée par recipe-forge v23 le 2026-05-06."}
+    {"title": "Sources", "text": "Batmanglij, *Food of Life* (spine, via Saffron and Lemons) ; Ghayour, *Persiana* ; Persian-Mama. Synthétisée par recipe-forge v26 le 2026-05-06."}
   ]
 }
 ```
