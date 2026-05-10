@@ -280,11 +280,28 @@ A qualifier earns its place **only if a cook picking the wrong default would pro
 
 **Test before output:** for each ingredient string, ask "would removing this qualifier change what the cook does or what the dish becomes?" If no, drop it. Verbose phrasing is a tell of LLM-generated content; concise phrasing reads like a working chef wrote it.
 
-## Wife-friendly tag and adaptation suggestions
+## Plats très gras — déprioriser par défaut
 
-The user's wife eats **no porc, no fruits de mer / poisson, no produits laitiers (mais beurre et ghee sont OK), no gluten**. The skill emits a single tag — `Pour Shelly` — when the recipe naturally fits this constraint. When it does not, the skill may surface a sensible adaptation as a DECISION (NOT auto-apply).
+**Éviter** les préparations dominées par la friture profonde ou les ratios de gras extrêmes :
+- Friture pleine immersion : tempura, beignets, poulet frit (KFC-style), churros, gâteaux frits, samoussas frits, pakoras, falafels.
+- Plats structurés autour d'une couche d'huile flottante visible (certains currys industriels, plats étouffés au saindoux abondant).
 
-**Beurre & ghee — exception explicite.** Le beurre clarifié (ghee) et le beurre classique sont tolérés (lactose résiduel ≤ 1 % pour le beurre, ~0 % pour le ghee). Une recette qui n'utilise du « lactose » que sous forme de beurre/ghee est compatible Shelly et se voit attribuer le tag automatiquement.
+**Pas considéré gras (procéder normalement) :**
+- Saisir, rôtir, sauter, déglacer, sweat, poêler — usage normal de matière grasse de cuisson.
+- Beurre ou huile d'olive en finition raisonnable.
+- Confit, rillettes, karaage, et autres plats où le gras EST l'identité — quand le plat est demandé nommément.
+
+**Levée de la règle :**
+- Demande explicite par nom (`tempura`, `karaage`, `poulet frit`, `falafel`, `churros`) → exécuter normalement.
+- La forme canonique du plat demandé EST la friture (`pakoras`, `tempura`, `arancini`) → procéder normalement.
+
+**Plat avec deux formes possibles** (aubergine frite vs grillée, schnitzel grand-bain vs poêle, courgettes frites vs rôties au four) et corpus permet le choix : **privilégier la version moins grasse comme spine**. La version frite est surfacée en DECISIONS si elle est canonique dans la cuisine d'origine.
+
+## Tag « Pour Shelly » — diet-compatible
+
+Le tag `Pour Shelly` s'applique aux recettes compatibles avec ce régime : **no porc, no fruits de mer / poisson, no produits laitiers (mais beurre et ghee sont OK), no gluten**. La skill émet ce tag unique (et seulement celui-ci) quand la recette respecte naturellement la contrainte. Sinon, surfacer une adaptation sensible en DECISION (ne PAS auto-appliquer).
+
+**Beurre & ghee — exception explicite.** Le beurre clarifié (ghee) et le beurre classique sont tolérés (lactose résiduel ≤ 1 % pour le beurre, ~0 % pour le ghee). Une recette qui n'utilise du « lactose » que sous forme de beurre/ghee est compatible et se voit attribuer le tag automatiquement.
 
 This replaces the previous Vegan/Végétarien/Sans gluten/etc. tag system entirely. No other dietary tags are emitted.
 
@@ -447,11 +464,11 @@ If you put Note du chef / Sources as trailing `HowToStep` items, they appear as 
 ```json
 "notes": [
   {"title": "Note du chef", "text": "Lorem ipsum…"},
-  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v26 le YYYY-MM-DD."}
+  {"title": "Sources", "text": "Source 1 (spine) ; Source 2 ; … Synthétisée par recipe-forge v27 le YYYY-MM-DD."}
 ]
 ```
 
-Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v26`).
+Each note: required `text`, optional `title`. The Sources note is **mandatory** and must include the synthesis date and skill version (e.g. `recipe-forge v27`).
 
 **This is a non-standard schema.org extension** — pure schema.org/Recipe has no `notes` field. But Mealie supports it, recipe-scrapers' `extruct`-based parsing preserves unknown JSON-LD keys, and Mealie's `get_notes()` reads it directly from the parsed dict.
 
@@ -519,7 +536,7 @@ JSON below applies spine choices (Cortas mélasse, with cannelle, no Shelly adap
   ],
   "notes": [
     {"title": "Note du chef", "text": "Cerneaux frais mixés au moment. Mijotage long non négociable. 250 ml calé sur Cortas ; pour Rob-e Anar épais, 130 ml + 700 ml d'eau."},
-    {"title": "Sources", "text": "Batmanglij, *Food of Life* (spine, via Saffron and Lemons) ; Ghayour, *Persiana* ; Persian-Mama. Synthétisée par recipe-forge v26 le 2026-05-06."}
+    {"title": "Sources", "text": "Batmanglij, *Food of Life* (spine, via Saffron and Lemons) ; Ghayour, *Persiana* ; Persian-Mama. Synthétisée par recipe-forge v27 le 2026-05-06."}
   ]
 }
 ```
